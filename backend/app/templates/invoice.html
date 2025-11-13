@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page { margin: 2cm; }
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            color: #333;
+            line-height: 1.6;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            border-bottom: 3px solid #0B6CF1;
+            padding-bottom: 20px;
+        }
+        .company-info h1 {
+            color: #0B6CF1;
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+        .invoice-info {
+            text-align: right;
+        }
+        .invoice-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0B6CF1;
+        }
+        .addresses {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+        }
+        .address-block h3 {
+            margin: 0 0 10px 0;
+            color: #0B6CF1;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        th {
+            background-color: #0B6CF1;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #E6EEF9;
+        }
+        .text-right { text-align: right; }
+        .totals {
+            margin-left: auto;
+            width: 300px;
+        }
+        .totals table td {
+            border: none;
+            padding: 8px 12px;
+        }
+        .total-row {
+            font-weight: bold;
+            font-size: 18px;
+            background-color: #F5F9FF;
+        }
+        .notes {
+            margin-top: 40px;
+            padding: 20px;
+            background-color: #F6F9FF;
+            border-left: 4px solid #0B6CF1;
+        }
+        .footer {
+            margin-top: 60px;
+            text-align: center;
+            color: #6B7280;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-info">
+            <h1>{{ settings.company_name }}</h1>
+            <p>{{ settings.address or '' }}</p>
+            <p>{{ settings.email or '' }}</p>
+        </div>
+        <div class="invoice-info">
+            <div class="invoice-number">{{ invoice.invoice_number }}</div>
+            <p><strong>Issue Date:</strong> {{ invoice.issue_date }}</p>
+            <p><strong>Due Date:</strong> {{ invoice.due_date }}</p>
+            <p><strong>Status:</strong> {{ invoice.status.upper() }}</p>
+        </div>
+    </div>
+
+    <div class="addresses">
+        <div class="address-block">
+            <h3>Bill To:</h3>
+            <p><strong>{{ customer.name }}</strong></p>
+            <p>{{ customer.email or '' }}</p>
+            <p>{{ customer.phone or '' }}</p>
+            <p>{{ customer.address or '' }}</p>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th class="text-right">Quantity</th>
+                <th class="text-right">Unit Price</th>
+                <th class="text-right">Tax Rate</th>
+                <th class="text-right">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.description }}</td>
+                <td class="text-right">{{ item.quantity }}</td>
+                <td class="text-right">${{ "%.2f"|format(item.unit_price_cents / 100) }}</td>
+                <td class="text-right">{{ "%.2f"|format(item.tax_rate / 100) }}%</td>
+                <td class="text-right">${{ "%.2f"|format(item.line_total_cents / 100) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="totals">
+        <table>
+            <tr>
+                <td>Subtotal:</td>
+                <td class="text-right">${{ "%.2f"|format(invoice.subtotal_cents / 100) }}</td>
+            </tr>
+            <tr>
+                <td>Tax:</td>
+                <td class="text-right">${{ "%.2f"|format(invoice.tax_cents / 100) }}</td>
+            </tr>
+            {% if invoice.discount_cents > 0 %}
+            <tr>
+                <td>Discount:</td>
+                <td class="text-right">-${{ "%.2f"|format(invoice.discount_cents / 100) }}</td>
+            </tr>
+            {% endif %}
+            <tr class="total-row">
+                <td>Total:</td>
+                <td class="text-right">${{ "%.2f"|format(invoice.total_cents / 100) }}</td>
+            </tr>
+            <tr>
+                <td>Balance Due:</td>
+                <td class="text-right">${{ "%.2f"|format(invoice.balance_due_cents / 100) }}</td>
+            </tr>
+        </table>
+    </div>
+
+    {% if invoice.notes %}
+    <div class="notes">
+        <strong>Notes:</strong><br>
+        {{ invoice.notes }}
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        <p>Thank you for your business!</p>
+    </div>
+</body>
+</html>
