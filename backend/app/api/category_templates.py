@@ -50,10 +50,14 @@ def create_category_template(
 def list_category_templates(
     active_only: bool = Query(True, description="Filter to active templates only"),
     category_type: Optional[str] = Query(None, description="Filter by category type"),
+    category_group: Optional[str] = Query(None, description="Filter by category group"),
+    search: Optional[str] = Query(None, description="Search templates by name"),
+    limit: int = Query(100, le=500, description="Number of templates to return"),
+    offset: int = Query(0, ge=0, description="Number of templates to skip"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """List user's category templates"""
+    """List user's category templates with pagination and filtering"""
     query = db.query(CategoryTemplate).filter(
         CategoryTemplate.user_id == current_user.id
     )
@@ -64,11 +68,27 @@ def list_category_templates(
     if category_type:
         query = query.filter(CategoryTemplate.category_type == category_type)
     
-    templates = query.order_by(CategoryTemplate.order, CategoryTemplate.name).all()
+    if category_group:
+        query = query.filter(CategoryTemplate.category_group == category_group)
+    
+    if search:
+        query = query.filter(CategoryTemplate.name.ilike(f"%{search}%"))
+    
+    # Get total count
+    total = query.count()
+    
+    # Apply pagination and ordering
+    templates = query.order_by(
+        CategoryTemplate.order, 
+        CategoryTemplate.name
+    ).offset(offset).limit(limit).all()
     
     return CategoryTemplateList(
         templates=templates,
-        total=len(templates)
+        total=total,
+        limit=limit,
+        offset=offset,
+        has_more=offset + limit < total
     )
 
 @router.get("/{template_id}", response_model=CategoryTemplateSchema)

@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from typing import List
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlalchemy.orm import Session, selectinload
+from sqlalchemy import and_, func, desc
+from typing import List, Optional
 from app.core.database import get_db
 from app.api.deps import get_current_user
 from app.models.user import User
@@ -8,7 +9,7 @@ from app.models.budget import Budget, BudgetCategory
 from app.models.category_template import CategoryTemplate
 from app.schemas.budget import (
     BudgetCreate, BudgetUpdate, Budget as BudgetSchema,
-    BudgetSummary, BudgetCategoryUpdate
+    BudgetSummary, BudgetCategoryUpdate, BudgetCategoryBulkUpdate
 )
 
 router = APIRouter(prefix="/api/budgets", tags=["budgets"])
@@ -84,19 +85,48 @@ def list_budgets(
 @router.get("/{budget_id}", response_model=BudgetSummary)
 def get_budget(
     budget_id: int,
+    include_categories: bool = Query(True, description="Include category details"),
+    category_limit: Optional[int] = Query(None, description="Limit number of categories returned"),
+    category_offset: Optional[int] = Query(0, description="Offset for category pagination"),
+    category_group: Optional[str] = Query(None, description="Filter categories by group"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    budget = db.query(Budget).filter(
+    # Use selectinload for efficient category loading
+    query = db.query(Budget).filter(
         Budget.id == budget_id,
         Budget.user_id == current_user.id
-    ).first()
+    )
+    
+    if include_categories:
+        query = query.options(selectinload(Budget.categories))
+    
+    budget = query.first()
     
     if not budget:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Budget not found"
         )
+    
+    # Apply category filtering and pagination if requested
+    if include_categories and (category_limit or category_group):
+        category_query = db.query(BudgetCategory).filter(
+            BudgetCategory.budget_id == budget_id,
+            BudgetCategory.is_active == 1
+        )
+        
+        if category_group:
+            category_query = category_query.filter(BudgetCategory.category_group == category_group)
+        
+        category_query = category_query.order_by(BudgetCategory.order, BudgetCategory.name)
+        
+        if category_offset:
+            category_query = category_query.offset(category_offset)
+        if category_limit:
+            category_query = category_query.limit(category_limit)
+        
+        budget.categories = category_query.all()
     
     summary = calculate_budget_summary(budget)
     return {"budget": budget, **summary}
@@ -252,3 +282,200 @@ def delete_budget(
     db.commit()
     
     return None
+
+@router.get("/{budget_id}/categories", response_model=List[dict])
+def get_budget_categories(
+    budget_id: int,
+    limit: int = Query(50, le=500, description="Number of categories to return"),
+    offset: int = Query(0, ge=0, description="Number of categories to skip"),
+    search: Optional[str] = Query(None, description="Search categories by name"),
+    group: Optional[str] = Query(None, description="Filter by category group"),
+    sort_by: str = Query("order", description="Sort by: order, name, allocated_cents"),
+    sort_desc: bool = Query(False, description="Sort in descending order"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get paginated budget categories with filtering and sorting"""
+    # Verify budget ownership
+    budget = db.query(Budget).filter(
+        Budget.id == budget_id,
+        Budget.user_id == current_user.id
+    ).first()
+    
+    if not budget:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Budget not found"
+        )
+    
+    # Build query
+    query = db.query(BudgetCategory).filter(
+        BudgetCategory.budget_id == budget_id,
+        BudgetCategory.is_active == 1
+    )
+    
+    # Apply filters
+    if search:
+        query = query.filter(BudgetCategory.name.ilike(f"%{search}%"))
+    
+    if group:
+        query = query.filter(BudgetCategory.category_group == group)
+    
+    # Apply sorting
+    sort_column = getattr(BudgetCategory, sort_by, BudgetCategory.order)
+    if sort_desc:
+        query = query.order_by(desc(sort_column))
+    else:
+        query = query.order_by(sort_column)
+    
+    # Get total count for pagination
+    total_count = query.count()
+    
+    # Apply pagination
+    categories = query.offset(offset).limit(limit).all()
+    
+    return {
+        "categories": categories,
+        "total": total_count,
+        "limit": limit,
+        "offset": offset,
+        "has_more": offset + limit < total_count
+    }
+
+@router.post("/{budget_id}/categories/bulk", response_model=dict)
+def bulk_update_categories(
+    budget_id: int,
+    updates: BudgetCategoryBulkUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Bulk update multiple budget categories"""
+    # Verify budget ownership
+    budget = db.query(Budget).filter(
+        Budget.id == budget_id,
+        Budget.user_id == current_user.id
+    ).first()
+    
+    if not budget:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Budget not found"
+        )
+    
+    updated_count = 0
+    errors = []
+    
+    # Process updates
+    for update in updates.updates:
+        try:
+            category = db.query(BudgetCategory).filter(
+                BudgetCategory.id == update.category_id,
+                BudgetCategory.budget_id == budget_id
+            ).first()
+            
+            if not category:
+                errors.append(f"Category {update.category_id} not found")
+                continue
+            
+            # Apply updates
+            if update.allocated_cents is not None:
+                category.allocated_cents = update.allocated_cents
+            if update.name is not None:
+                category.name = update.name
+            if update.order is not None:
+                category.order = update.order
+            if update.category_group is not None:
+                category.category_group = update.category_group
+            if update.description is not None:
+                category.description = update.description
+            
+            updated_count += 1
+            
+        except Exception as e:
+            errors.append(f"Error updating category {update.category_id}: {str(e)}")
+    
+    db.commit()
+    
+    return {
+        "updated_count": updated_count,
+        "errors": errors,
+        "success": len(errors) == 0
+    }
+
+@router.post("/{budget_id}/categories/reorder", response_model=dict)
+def reorder_categories(
+    budget_id: int,
+    category_orders: List[dict],  # [{"id": 1, "order": 0}, {"id": 2, "order": 1}]
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Reorder budget categories"""
+    # Verify budget ownership
+    budget = db.query(Budget).filter(
+        Budget.id == budget_id,
+        Budget.user_id == current_user.id
+    ).first()
+    
+    if not budget:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Budget not found"
+        )
+    
+    updated_count = 0
+    
+    for item in category_orders:
+        category = db.query(BudgetCategory).filter(
+            BudgetCategory.id == item["id"],
+            BudgetCategory.budget_id == budget_id
+        ).first()
+        
+        if category:
+            category.order = item["order"]
+            updated_count += 1
+    
+    db.commit()
+    
+    return {
+        "updated_count": updated_count,
+        "message": f"Reordered {updated_count} categories"
+    }
+
+@router.get("/{budget_id}/groups", response_model=List[dict])
+def get_category_groups(
+    budget_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get all category groups in a budget with counts"""
+    # Verify budget ownership
+    budget = db.query(Budget).filter(
+        Budget.id == budget_id,
+        Budget.user_id == current_user.id
+    ).first()
+    
+    if not budget:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Budget not found"
+        )
+    
+    # Get groups with counts
+    groups = db.query(
+        BudgetCategory.category_group,
+        func.count(BudgetCategory.id).label('count'),
+        func.sum(BudgetCategory.allocated_cents).label('total_allocated')
+    ).filter(
+        BudgetCategory.budget_id == budget_id,
+        BudgetCategory.is_active == 1,
+        BudgetCategory.category_group.isnot(None)
+    ).group_by(BudgetCategory.category_group).all()
+    
+    return [
+        {
+            "name": group.category_group,
+            "count": group.count,
+            "total_allocated_cents": group.total_allocated or 0
+        }
+        for group in groups
+    ]
