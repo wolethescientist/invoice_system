@@ -94,12 +94,20 @@ export default function BudgetsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <h1 className="text-3xl font-bold text-gray-900">My Budgets</h1>
-          <button
-            onClick={() => router.push('/budgets/new')}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Create Budget
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => router.push('/budgets/categories')}
+              className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              Manage Categories
+            </button>
+            <button
+              onClick={() => router.push('/budgets/new')}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Create Budget
+            </button>
+          </div>
         </div>
 
         {budgets.length === 0 ? (

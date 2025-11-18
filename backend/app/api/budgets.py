@@ -5,6 +5,7 @@ from app.core.database import get_db
 from app.api.deps import get_current_user
 from app.models.user import User
 from app.models.budget import Budget, BudgetCategory
+from app.models.category_template import CategoryTemplate
 from app.schemas.budget import (
     BudgetCreate, BudgetUpdate, Budget as BudgetSchema,
     BudgetSummary, BudgetCategoryUpdate
@@ -160,6 +161,69 @@ def update_budget(
                 order=cat_data.order
             )
             db.add(category)
+    
+    db.commit()
+    db.refresh(budget)
+    
+    summary = calculate_budget_summary(budget)
+    return {"budget": budget, **summary}
+
+@router.post("/from-templates", response_model=BudgetSummary, status_code=status.HTTP_201_CREATED)
+def create_budget_from_templates(
+    month: int,
+    year: int,
+    income_cents: int,
+    template_ids: List[int] = [],
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Create a budget using category templates"""
+    # Check if budget already exists
+    existing = db.query(Budget).filter(
+        Budget.user_id == current_user.id,
+        Budget.month == month,
+        Budget.year == year
+    ).first()
+    
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Budget for {month}/{year} already exists"
+        )
+    
+    # Create budget
+    budget = Budget(
+        user_id=current_user.id,
+        month=month,
+        year=year,
+        income_cents=income_cents
+    )
+    db.add(budget)
+    db.flush()
+    
+    # Get templates to use
+    if template_ids:
+        templates = db.query(CategoryTemplate).filter(
+            CategoryTemplate.id.in_(template_ids),
+            CategoryTemplate.user_id == current_user.id,
+            CategoryTemplate.is_active == True
+        ).all()
+    else:
+        # Use all active templates if none specified
+        templates = db.query(CategoryTemplate).filter(
+            CategoryTemplate.user_id == current_user.id,
+            CategoryTemplate.is_active == True
+        ).order_by(CategoryTemplate.order, CategoryTemplate.name).all()
+    
+    # Create categories from templates
+    for template in templates:
+        category = BudgetCategory(
+            budget_id=budget.id,
+            name=template.name,
+            allocated_cents=template.default_allocation_cents,
+            order=template.order
+        )
+        db.add(category)
     
     db.commit()
     db.refresh(budget)
