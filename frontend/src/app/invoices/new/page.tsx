@@ -135,6 +135,15 @@ export default function NewInvoicePage() {
                 </Button>
               </div>
 
+              {/* Column Headers */}
+              <div className="grid grid-cols-12 gap-3 mb-2 px-1">
+                <div className="col-span-5 text-xs font-medium text-neutral-600">Description</div>
+                <div className="col-span-2 text-xs font-medium text-neutral-600">Quantity</div>
+                <div className="col-span-2 text-xs font-medium text-neutral-600">Price</div>
+                <div className="col-span-2 text-xs font-medium text-neutral-600">Tax %</div>
+                <div className="col-span-1"></div>
+              </div>
+
               <div className="space-y-3">
                 {items.map((item, index) => (
                   <div key={index} className="grid grid-cols-12 gap-3 items-start">
