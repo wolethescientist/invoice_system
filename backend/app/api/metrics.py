@@ -33,10 +33,18 @@ def get_metrics_summary(
     overdue_total = sum(inv.balance_due_cents for inv in overdue)
     
     # Monthly revenue (last 6 months)
-    monthly_data = db.query(
-        func.strftime('%Y-%m', PaymentModel.paid_at).label('month'),
-        func.sum(PaymentModel.amount_cents).label('revenue')
-    ).group_by('month').order_by('month').limit(6).all()
+    # Use to_char for PostgreSQL, strftime for SQLite
+    from app.core.config import settings
+    if 'postgresql' in settings.DATABASE_URL:
+        monthly_data = db.query(
+            func.to_char(PaymentModel.paid_at, 'YYYY-MM').label('month'),
+            func.sum(PaymentModel.amount_cents).label('revenue')
+        ).group_by('month').order_by('month').limit(6).all()
+    else:
+        monthly_data = db.query(
+            func.strftime('%Y-%m', PaymentModel.paid_at).label('month'),
+            func.sum(PaymentModel.amount_cents).label('revenue')
+        ).group_by('month').order_by('month').limit(6).all()
     
     monthly_revenue = [
         MonthlyRevenue(month=row.month, revenue_cents=row.revenue or 0)
