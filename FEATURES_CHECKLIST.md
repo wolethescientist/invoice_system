@@ -251,9 +251,52 @@ This document tracks all acceptance criteria and features from the original spec
 - [ ] Recurring invoices
 - [ ] Advanced reporting
 
+## ✅ Budget Management (Zero-Based Budgeting)
+
+- [x] Create monthly zero-based budgets
+- [x] Budget fields: month, year, income, categories
+- [x] Category allocations with amounts
+- [x] Unique constraint: one budget per user per month/year
+- [x] List all budgets for user
+- [x] View budget details with summary
+- [x] Update budget income and categories
+- [x] Delete budget
+- [x] Real-time balance calculation (income - allocated)
+- [x] Validation: total allocations must equal income
+- [x] Money stored as cents for precision
+
+## ✅ Budget Frontend Features
+
+- [x] `/budgets` - Budget list page with summary cards
+- [x] `/budgets/new` - Create new budget with live validation
+- [x] `/budgets/[id]` - View/edit budget details
+- [x] Add/remove categories dynamically
+- [x] Live remaining amount display
+- [x] Color-coded status (balanced/unallocated/over-budget)
+- [x] Visual feedback for budget balance
+- [x] Submit disabled until budget is balanced
+- [x] Month/year selector
+- [x] Category ordering support
+- [x] Responsive layout
+- [x] Year filter for budget list
+- [x] Cards/Table view toggle
+- [x] Summary statistics (total budgets, income, allocated)
+- [x] Category filtering in detail view
+- [x] Auto-refresh every 30 seconds for cross-device sync
+- [x] Current month budget widget component
+
+## ✅ Budget API Endpoints
+
+- [x] POST /api/budgets - Create budget
+- [x] GET /api/budgets - List user's budgets
+- [x] GET /api/budgets/{id} - Get budget with summary
+- [x] GET /api/budgets/period/{year}/{month} - Get by period
+- [x] PUT /api/budgets/{id} - Update budget
+- [x] DELETE /api/budgets/{id} - Delete budget
+
 ## Summary
 
-**Total Features Implemented: 150+**
+**Total Features Implemented: 165+**
 
 All acceptance criteria from the original specification have been met:
 - ✅ User authentication with JWT

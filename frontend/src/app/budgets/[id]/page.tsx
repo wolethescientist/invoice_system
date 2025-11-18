@@ -39,10 +39,20 @@ export default function BudgetDetailPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('')
 
   useEffect(() => {
     fetchBudget()
-  }, [budgetId])
+    
+    // Auto-refresh every 30 seconds to sync across devices
+    const interval = setInterval(() => {
+      if (!editing) {
+        fetchBudget()
+      }
+    }, 30000)
+    
+    return () => clearInterval(interval)
+  }, [budgetId, editing])
 
   const fetchBudget = async () => {
     try {
@@ -281,7 +291,18 @@ export default function BudgetDetailPage() {
 
         {/* Categories */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Budget Categories</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Budget Categories</h2>
+            {!editing && categories.length > 3 && (
+              <input
+                type="text"
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                placeholder="Filter categories..."
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
+              />
+            )}
+          </div>
           
           {editing && (
             <div className="flex gap-2 mb-4">
@@ -304,7 +325,9 @@ export default function BudgetDetailPage() {
           )}
 
           <div className="space-y-3">
-            {categories.map((category, index) => (
+            {categories
+              .filter(cat => !categoryFilter || cat.name.toLowerCase().includes(categoryFilter.toLowerCase()))
+              .map((category, index) => (
               <div key={index} className={`flex gap-3 items-center p-4 rounded-lg ${
                 editing ? 'bg-gray-50' : 'bg-white border border-gray-200'
               }`}>

@@ -722,3 +722,274 @@ Visit http://localhost:8000/docs for:
 - See all available endpoints
 
 Alternative docs: http://localhost:8000/redoc
+
+
+---
+
+## Budget Endpoints
+
+### Create Budget
+
+Create a new monthly zero-based budget.
+
+**Endpoint:** `POST /api/budgets`
+
+**Authentication:** Required
+
+**Request Body:**
+```json
+{
+  "month": 12,
+  "year": 2025,
+  "income_cents": 500000,
+  "categories": [
+    {
+      "name": "Rent",
+      "allocated_cents": 150000,
+      "order": 0
+    },
+    {
+      "name": "Groceries",
+      "allocated_cents": 60000,
+      "order": 1
+    }
+  ]
+}
+```
+
+**Response:** `201 Created`
+```json
+{
+  "budget": {
+    "id": 1,
+    "user_id": 1,
+    "month": 12,
+    "year": 2025,
+    "income_cents": 500000,
+    "categories": [
+      {
+        "id": 1,
+        "budget_id": 1,
+        "name": "Rent",
+        "allocated_cents": 150000,
+        "order": 0,
+        "created_at": "2025-11-18T10:00:00"
+      }
+    ],
+    "created_at": "2025-11-18T10:00:00",
+    "updated_at": "2025-11-18T10:00:00"
+  },
+  "total_allocated_cents": 210000,
+  "remaining_cents": 290000,
+  "is_balanced": false
+}
+```
+
+**Errors:**
+- `400` - Budget for this month/year already exists
+- `401` - Unauthorized
+
+---
+
+### List Budgets
+
+Get all budgets for the authenticated user.
+
+**Endpoint:** `GET /api/budgets`
+
+**Authentication:** Required
+
+**Response:** `200 OK`
+```json
+[
+  {
+    "id": 1,
+    "user_id": 1,
+    "month": 12,
+    "year": 2025,
+    "income_cents": 500000,
+    "categories": [...],
+    "created_at": "2025-11-18T10:00:00",
+    "updated_at": "2025-11-18T10:00:00"
+  }
+]
+```
+
+---
+
+### Get Budget
+
+Get a specific budget with summary.
+
+**Endpoint:** `GET /api/budgets/{budget_id}`
+
+**Authentication:** Required
+
+**Response:** `200 OK`
+```json
+{
+  "budget": {
+    "id": 1,
+    "user_id": 1,
+    "month": 12,
+    "year": 2025,
+    "income_cents": 500000,
+    "categories": [...]
+  },
+  "total_allocated_cents": 500000,
+  "remaining_cents": 0,
+  "is_balanced": true
+}
+```
+
+**Errors:**
+- `404` - Budget not found
+- `401` - Unauthorized
+
+---
+
+### Get Budget by Period
+
+Get a budget for a specific month and year. Useful for accessing the current month's budget across devices.
+
+**Endpoint:** `GET /api/budgets/period/{year}/{month}`
+
+**Authentication:** Required
+
+**Example:** `GET /api/budgets/period/2025/12`
+
+**Response:** `200 OK`
+```json
+{
+  "budget": {...},
+  "total_allocated_cents": 500000,
+  "remaining_cents": 0,
+  "is_balanced": true
+}
+```
+
+**Use Cases:**
+- Quick access to current month's budget
+- Cross-device synchronization
+- Dashboard widgets
+
+**Errors:**
+- `404` - Budget not found for this period
+- `401` - Unauthorized
+
+---
+
+### Update Budget
+
+Update an existing budget's income and/or categories.
+
+**Endpoint:** `PUT /api/budgets/{budget_id}`
+
+**Authentication:** Required
+
+**Request Body:**
+```json
+{
+  "income_cents": 550000,
+  "categories": [
+    {
+      "name": "Rent",
+      "allocated_cents": 150000,
+      "order": 0
+    },
+    {
+      "name": "Groceries",
+      "allocated_cents": 70000,
+      "order": 1
+    }
+  ]
+}
+```
+
+**Note:** When updating categories, all existing categories are replaced with the new list.
+
+**Response:** `200 OK`
+```json
+{
+  "budget": {...},
+  "total_allocated_cents": 550000,
+  "remaining_cents": 0,
+  "is_balanced": true
+}
+```
+
+**Errors:**
+- `404` - Budget not found
+- `401` - Unauthorized
+
+---
+
+### Delete Budget
+
+Delete a budget and all its categories.
+
+**Endpoint:** `DELETE /api/budgets/{budget_id}`
+
+**Authentication:** Required
+
+**Response:** `204 No Content`
+
+**Errors:**
+- `404` - Budget not found
+- `401` - Unauthorized
+
+---
+
+## Budget Data Models
+
+### Budget Object
+
+```typescript
+{
+  id: number
+  user_id: number
+  month: number          // 1-12
+  year: number           // 2000-2100
+  income_cents: number   // Amount in cents
+  categories: BudgetCategory[]
+  created_at: string     // ISO 8601 datetime
+  updated_at: string     // ISO 8601 datetime
+}
+```
+
+### BudgetCategory Object
+
+```typescript
+{
+  id: number
+  budget_id: number
+  name: string
+  allocated_cents: number  // Amount in cents
+  order: number            // Display order
+  created_at: string       // ISO 8601 datetime
+}
+```
+
+### BudgetSummary Object
+
+```typescript
+{
+  budget: Budget
+  total_allocated_cents: number
+  remaining_cents: number
+  is_balanced: boolean
+}
+```
+
+---
+
+## Budget Validation Rules
+
+1. **Income**: Must be >= 0
+2. **Month**: Must be between 1 and 12
+3. **Year**: Must be between 2000 and 2100
+4. **Category Allocations**: Must be >= 0
+5. **Uniqueness**: One budget per user per month/year
+6. **Zero-Based**: For a balanced budget, `income_cents` must equal `total_allocated_cents`
+
+---
