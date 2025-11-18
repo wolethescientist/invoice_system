@@ -10,3 +10,4 @@ jinja2
 xhtml2pdf
 python-dateutil
 pydantic[email]
+psycopg2-binary

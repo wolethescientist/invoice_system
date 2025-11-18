@@ -13,20 +13,13 @@ def seed_database():
     
     try:
         # Check if data already exists
-        if db.query(User).first():
+        if db.query(Customer).first():
             print("Database already seeded. Skipping...")
             return
         
-        print("Seeding database...")
+        print("Seeding dummy data (customers, invoices, settings)...")
         
-        # Create demo user
-        user = User(
-            email="demo@example.com",
-            password_hash=get_password_hash("demo123")
-        )
-        db.add(user)
-        
-        # Create settings
+        # Create default settings
         settings = Settings(
             company_name="Demo Company Inc.",
             address="123 Business St, Suite 100, San Francisco, CA 94105",
@@ -38,7 +31,8 @@ def seed_database():
         )
         db.add(settings)
         
-        # Create customers
+        # Create dummy customers
+        # Create dummy customers
         customers_data = [
             {"name": "ACME Corporation", "email": "contact@acme.com", "phone": "+1-555-0100", "address": "456 Corporate Blvd, New York, NY 10001"},
             {"name": "TechStart LLC", "email": "billing@techstart.io", "phone": "+1-555-0200", "address": "789 Innovation Dr, Austin, TX 78701"},
@@ -179,10 +173,9 @@ def seed_database():
         settings.last_sequence = 4
         
         db.commit()
-        print("✓ Database seeded successfully!")
-        print("\nDemo credentials:")
-        print("  Email: demo@example.com")
-        print("  Password: demo123")
+        print("✓ Dummy data seeded successfully!")
+        print("\n3 customers and 4 sample invoices created")
+        print("Register your account at /auth/register to get started")
         
     except Exception as e:
         print(f"Error seeding database: {e}")
