@@ -38,6 +38,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <Link href="/customers" className="text-neutral-700 hover:text-brand-500">
                 Customers
               </Link>
+              <Link href="/budgets" className="text-neutral-700 hover:text-brand-500">
+                Budgets
+              </Link>
             </div>
           </div>
           <Button variant="ghost" onClick={logout}>
