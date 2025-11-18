@@ -26,6 +26,14 @@ interface BudgetSummary {
   is_balanced: boolean
 }
 
+interface CategorySpending {
+  category_id: number
+  category_name: string
+  allocated_cents: number
+  spent_cents: number
+  remaining_cents: number
+}
+
 export default function BudgetDetailPage() {
   const router = useRouter()
   const params = useParams()
@@ -40,14 +48,18 @@ export default function BudgetDetailPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
+  const [categorySpending, setCategorySpending] = useState<CategorySpending[]>([])
+  const [showTransactions, setShowTransactions] = useState(false)
 
   useEffect(() => {
     fetchBudget()
+    fetchCategorySpending()
     
     // Auto-refresh every 30 seconds to sync across devices
     const interval = setInterval(() => {
       if (!editing) {
         fetchBudget()
+        fetchCategorySpending()
       }
     }, 30000)
     
@@ -65,6 +77,15 @@ export default function BudgetDetailPage() {
       setError('Failed to load budget')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchCategorySpending = async () => {
+    try {
+      const response = await api.get(`/api/transactions/budget/${budgetId}/summary`)
+      setCategorySpending(response.data.categories)
+    } catch (error) {
+      console.error('Failed to fetch category spending:', error)
     }
   }
 
@@ -194,6 +215,12 @@ export default function BudgetDetailPage() {
             <div className="flex gap-2">
               {!editing ? (
                 <>
+                  <button
+                    onClick={() => router.push('/transactions')}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    Add Transaction
+                  </button>
                   <button
                     onClick={() => setEditing(true)}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -327,41 +354,70 @@ export default function BudgetDetailPage() {
           <div className="space-y-3">
             {categories
               .filter(cat => !categoryFilter || cat.name.toLowerCase().includes(categoryFilter.toLowerCase()))
-              .map((category, index) => (
-              <div key={index} className={`flex gap-3 items-center p-4 rounded-lg ${
-                editing ? 'bg-gray-50' : 'bg-white border border-gray-200'
-              }`}>
-                <div className="flex-1">
-                  <span className="font-medium text-gray-900">{category.name}</span>
-                </div>
-                {editing ? (
-                  <>
-                    <div className="relative w-40">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
-                      <input
-                        type="number"
-                        value={category.allocated_cents / 100}
-                        onChange={(e) => updateCategoryAmount(index, e.target.value)}
-                        step="0.01"
-                        min="0"
-                        className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
+              .map((category, index) => {
+                const spending = categorySpending.find(s => s.category_id === category.id)
+                const spentCents = spending?.spent_cents || 0
+                const remainingCents = category.allocated_cents - spentCents
+                const percentSpent = category.allocated_cents > 0 
+                  ? (spentCents / category.allocated_cents) * 100 
+                  : 0
+
+                return (
+                  <div key={index} className={`p-4 rounded-lg ${
+                    editing ? 'bg-gray-50' : 'bg-white border border-gray-200'
+                  }`}>
+                    <div className="flex gap-3 items-center">
+                      <div className="flex-1">
+                        <span className="font-medium text-gray-900">{category.name}</span>
+                        {!editing && spending && (
+                          <div className="mt-2">
+                            <div className="flex justify-between text-sm text-gray-600 mb-1">
+                              <span>Spent: {formatCurrency(spentCents)}</span>
+                              <span>Remaining: {formatCurrency(remainingCents)}</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div 
+                                className={`h-2 rounded-full transition-all ${
+                                  percentSpent > 100 ? 'bg-red-500' : 
+                                  percentSpent > 90 ? 'bg-yellow-500' : 
+                                  'bg-green-500'
+                                }`}
+                                style={{ width: `${Math.min(percentSpent, 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      {editing ? (
+                        <>
+                          <div className="relative w-40">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                            <input
+                              type="number"
+                              value={category.allocated_cents / 100}
+                              onChange={(e) => updateCategoryAmount(index, e.target.value)}
+                              step="0.01"
+                              min="0"
+                              className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeCategory(index)}
+                            className="text-red-600 hover:text-red-700 px-3 py-2"
+                          >
+                            Remove
+                          </button>
+                        </>
+                      ) : (
+                        <div className="text-xl font-semibold text-gray-900">
+                          {formatCurrency(category.allocated_cents)}
+                        </div>
+                      )}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => removeCategory(index)}
-                      className="text-red-600 hover:text-red-700 px-3 py-2"
-                    >
-                      Remove
-                    </button>
-                  </>
-                ) : (
-                  <div className="text-xl font-semibold text-gray-900">
-                    {formatCurrency(category.allocated_cents)}
                   </div>
-                )}
-              </div>
-            ))}
+                )
+              })}
           </div>
         </div>
 
