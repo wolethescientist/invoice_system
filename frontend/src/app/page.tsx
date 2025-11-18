@@ -79,7 +79,7 @@ export default function LandingPage() {
           whileHover={{ scale: 1.05 }}
           className="text-2xl font-bold text-brand-500 cursor-pointer"
         >
-          InvoiceSystem
+          Hikey
         </motion.div>
         <Link href="/auth/login">
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -404,7 +404,7 @@ export default function LandingPage() {
             Ready to Get Started?
           </h2>
           <p className="text-2xl text-neutral-600 mb-12 max-w-3xl mx-auto">
-            Join thousands of businesses already using InvoiceSystem to streamline their billing
+            Join thousands of businesses already using Hikey to streamline their billing
           </p>
           <Link href="/auth/login">
             <motion.div
@@ -428,7 +428,7 @@ export default function LandingPage() {
         <div className="container mx-auto px-6">
           <div className="grid md:grid-cols-4 gap-12 mb-12">
             <div>
-              <h3 className="text-2xl font-bold mb-4 text-brand-400">InvoiceSystem</h3>
+              <h3 className="text-2xl font-bold mb-4 text-brand-400">Hikey</h3>
               <p className="text-neutral-400">
                 Professional invoicing made simple and beautiful.
               </p>
@@ -459,7 +459,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="border-t border-neutral-800 pt-8 text-center text-neutral-400">
-            <p>&copy; 2024 InvoiceSystem. All rights reserved.</p>
+            <p>&copy; 2025 Hikey. All rights reserved.</p>
           </div>
         </div>
       </footer>

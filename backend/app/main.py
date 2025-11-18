@@ -8,8 +8,8 @@ from app.api import auth, customers, invoices, payments, metrics
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="Invoicing API",
-    description="Single-user invoicing demo API",
+    title="Hikey API",
+    description="Invoice management API",
     version="1.0.0"
 )
 
@@ -31,7 +31,7 @@ app.include_router(metrics.router)
 
 @app.get("/")
 def root():
-    return {"message": "Invoicing API", "docs": "/docs"}
+    return {"message": "Hikey API", "docs": "/docs"}
 
 @app.get("/health")
 def health():
