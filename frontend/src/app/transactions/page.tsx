@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
+import { DashboardLayout } from '@/components/DashboardLayout'
 import SplitTransactionForm from '@/components/SplitTransactionForm'
 import ExportModal from '@/components/ExportModal'
 
@@ -223,8 +224,8 @@ export default function TransactionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <DashboardLayout>
+      <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <div className="flex justify-between items-start">
             <div>
@@ -541,6 +542,6 @@ export default function TransactionsPage() {
           categoryId: filterCategory || undefined
         }}
       />
-    </div>
+    </DashboardLayout>
   )
 }

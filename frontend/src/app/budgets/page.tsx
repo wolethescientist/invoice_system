@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth-context'
+import { DashboardLayout } from '@/components/DashboardLayout'
 
 interface Budget {
   id: number
@@ -90,8 +91,8 @@ export default function BudgetsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <DashboardLayout>
+      <div className="max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <h1 className="text-3xl font-bold text-gray-900">My Budgets</h1>
           <div className="flex gap-3">
@@ -325,6 +326,6 @@ export default function BudgetsPage() {
           </>
         )}
       </div>
-    </div>
+    </DashboardLayout>
   )
 }
