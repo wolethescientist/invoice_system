@@ -221,6 +221,12 @@ export default function BudgetDetailPage() {
               {!editing ? (
                 <>
                   <button
+                    onClick={() => router.push(`/budgets/${budgetId}/funding`)}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                  >
+                    Funding Plan
+                  </button>
+                  <button
                     onClick={() => router.push('/transactions')}
                     className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                   >

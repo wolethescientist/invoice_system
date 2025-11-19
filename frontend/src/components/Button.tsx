@@ -4,7 +4,7 @@ import { motion, HTMLMotionProps } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'children'> {
-  variant?: 'primary' | 'secondary' | 'ghost'
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
   children: React.ReactNode
 }
 
@@ -15,6 +15,7 @@ export function Button({ variant = 'primary', children, className, ...props }: B
     primary: 'bg-brand-500 text-white hover:bg-brand-600',
     secondary: 'bg-white text-brand-500 border border-brand-500 hover:bg-brand-50',
     ghost: 'bg-transparent text-neutral-700 hover:bg-neutral-200',
+    danger: 'bg-red-600 text-white hover:bg-red-700',
   }
 
   return (

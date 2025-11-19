@@ -294,9 +294,40 @@ This document tracks all acceptance criteria and features from the original spec
 - [x] PUT /api/budgets/{id} - Update budget
 - [x] DELETE /api/budgets/{id} - Delete budget
 
+## ✅ Paycheck Planning (Income Scheduling)
+
+- [x] Create recurring paycheck schedules
+- [x] Multiple frequency options (weekly, biweekly, semimonthly, monthly, custom)
+- [x] Set paycheck amount and next payment date
+- [x] Activate/deactivate paychecks
+- [x] View upcoming paycheck schedule
+- [x] Generate paycheck dates based on frequency
+- [x] Create paycheck instances for specific budgets
+- [x] Auto-allocate paychecks to budget months
+- [x] Link paychecks to budget categories
+- [x] Default allocation templates per paycheck
+- [x] Track which paychecks have been received
+- [x] Budget funding plan view
+- [x] Total income calculation from paychecks
+- [x] Available funds tracking
+- [x] Category funding status with progress bars
+- [x] Visual funding percentage indicators
+- [x] Multiple income sources support
+- [x] Funding sources per category
+- [x] Remaining amount calculations
+- [x] Fully funded status indicators
+- [x] Edit paycheck details and allocations
+- [x] Delete paychecks
+- [x] View paycheck history
+- [x] Responsive UI with grid layout
+- [x] Color-coded funding status
+- [x] Integration with budget system
+- [x] Navigation link in dashboard
+- [x] Funding plan link from budget detail
+
 ## Summary
 
-**Total Features Implemented: 165+**
+**Total Features Implemented: 190+**
 
 All acceptance criteria from the original specification have been met:
 - ✅ User authentication with JWT
