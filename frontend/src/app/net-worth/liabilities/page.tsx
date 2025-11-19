@@ -131,7 +131,7 @@ export default function LiabilitiesPage() {
                       {formatCurrency(liability.current_balance)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
-                      {liability.interest_rate.toFixed(2)}%
+                      {(liability.interest_rate || 0).toFixed(2)}%
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
                       {formatCurrency(liability.minimum_payment)}
