@@ -1,12 +1,18 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func, extract
-from datetime import date
+from datetime import date, datetime
 from app.core.database import get_db
 from app.api.deps import get_current_user
 from app.models.invoice import Invoice as InvoiceModel, InvoiceStatus
 from app.models.payment import Payment as PaymentModel
 from app.models.customer import Customer as CustomerModel
+from app.models.budget import Budget, BudgetCategory
+from app.models.transaction import Transaction, TransactionSplit
+from app.models.sinking_fund import SinkingFund, SinkingFundContribution
+from app.models.net_worth import Asset, Liability
+from app.models.financial_goal import FinancialGoal
+from app.models.paycheck import Paycheck
 from app.models.user import User
 from app.schemas.metrics import MetricsSummary, MonthlyRevenue, TopCustomer
 
@@ -75,3 +81,152 @@ def get_metrics_summary(
         monthly_revenue=monthly_revenue,
         top_customers=top_customers
     )
+
+@router.get("/dashboard")
+def get_dashboard_metrics(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get comprehensive dashboard metrics for all features"""
+    today = date.today()
+    current_month = today.month
+    current_year = today.year
+    
+    # Budget metrics - current month
+    current_budget = db.query(Budget).filter(
+        Budget.user_id == current_user.id,
+        Budget.month == current_month,
+        Budget.year == current_year
+    ).first()
+    
+    budget_metrics = None
+    if current_budget:
+        total_allocated = sum(cat.allocated_cents for cat in current_budget.categories)
+        
+        # Calculate total spent
+        total_spent = 0
+        for category in current_budget.categories:
+            regular_spent = db.query(func.sum(Transaction.amount_cents)).filter(
+                Transaction.category_id == category.id,
+                Transaction.is_split == False
+            ).scalar() or 0
+            
+            split_spent = db.query(func.sum(TransactionSplit.amount_cents)).filter(
+                TransactionSplit.category_id == category.id
+            ).scalar() or 0
+            
+            total_spent += regular_spent + split_spent
+        
+        budget_metrics = {
+            "budget_id": current_budget.id,
+            "income_cents": current_budget.income_cents,
+            "allocated_cents": total_allocated,
+            "spent_cents": total_spent,
+            "remaining_cents": current_budget.income_cents - total_allocated,
+            "available_cents": total_allocated - total_spent
+        }
+    
+    # Transaction metrics - this month
+    transaction_count = db.query(func.count(Transaction.id)).filter(
+        Transaction.user_id == current_user.id,
+        extract('month', Transaction.date) == current_month,
+        extract('year', Transaction.date) == current_year
+    ).scalar() or 0
+    
+    # Sinking funds metrics
+    sinking_funds = db.query(SinkingFund).filter(
+        SinkingFund.user_id == current_user.id,
+        SinkingFund.is_active == True
+    ).all()
+    
+    sinking_funds_metrics = []
+    total_sinking_funds_saved = 0
+    total_sinking_funds_goal = 0
+    
+    for fund in sinking_funds:
+        contributions = db.query(SinkingFundContribution).filter(
+            SinkingFundContribution.fund_id == fund.id
+        ).all()
+        
+        total_contributed = sum(c.amount_cents for c in contributions)
+        total_sinking_funds_saved += total_contributed
+        total_sinking_funds_goal += fund.target_amount_cents
+        
+        sinking_funds_metrics.append({
+            "id": fund.id,
+            "name": fund.name,
+            "target_amount_cents": fund.target_amount_cents,
+            "contributed_cents": total_contributed,
+            "remaining_cents": fund.target_amount_cents - total_contributed
+        })
+    
+    # Net worth metrics
+    assets = db.query(Asset).filter(
+        Asset.user_id == current_user.id,
+        Asset.is_active == True
+    ).all()
+    
+    liabilities = db.query(Liability).filter(
+        Liability.user_id == current_user.id,
+        Liability.is_active == True
+    ).all()
+    
+    total_assets = sum(a.current_value_cents for a in assets)
+    total_liabilities = sum(l.current_balance_cents for l in liabilities)
+    net_worth = total_assets - total_liabilities
+    
+    net_worth_metrics = {
+        "total_assets_cents": total_assets,
+        "total_liabilities_cents": total_liabilities,
+        "net_worth_cents": net_worth,
+        "asset_count": len(assets),
+        "liability_count": len(liabilities)
+    }
+    
+    # Financial goals metrics
+    goals = db.query(FinancialGoal).filter(
+        FinancialGoal.user_id == current_user.id,
+        FinancialGoal.is_active == True
+    ).all()
+    
+    active_goals = [g for g in goals if g.status == 'in_progress']
+    completed_goals = [g for g in goals if g.status == 'completed']
+    
+    goals_metrics = {
+        "total_goals": len(goals),
+        "active_goals": len(active_goals),
+        "completed_goals": len(completed_goals),
+        "total_target_cents": sum(g.target_amount_cents for g in active_goals),
+        "total_saved_cents": sum(g.current_amount_cents for g in active_goals)
+    }
+    
+    # Paycheck metrics - upcoming
+    upcoming_paychecks = db.query(Paycheck).filter(
+        Paycheck.user_id == current_user.id,
+        Paycheck.pay_date >= today
+    ).order_by(Paycheck.pay_date).limit(3).all()
+    
+    paycheck_metrics = {
+        "upcoming_count": len(upcoming_paychecks),
+        "next_paycheck": {
+            "id": upcoming_paychecks[0].id,
+            "amount_cents": upcoming_paychecks[0].net_amount_cents,
+            "pay_date": upcoming_paychecks[0].pay_date.isoformat()
+        } if upcoming_paychecks else None
+    }
+    
+    return {
+        "budget": budget_metrics,
+        "transactions": {
+            "count_this_month": transaction_count
+        },
+        "sinking_funds": {
+            "total_saved_cents": total_sinking_funds_saved,
+            "total_goal_cents": total_sinking_funds_goal,
+            "fund_count": len(sinking_funds),
+            "funds": sinking_funds_metrics[:5]  # Top 5
+        },
+        "net_worth": net_worth_metrics,
+        "goals": goals_metrics,
+        "paychecks": paycheck_metrics
+    }
