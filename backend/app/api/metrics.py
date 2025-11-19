@@ -88,132 +88,188 @@ def get_dashboard_metrics(
     current_user: User = Depends(get_current_user)
 ):
     """Get comprehensive dashboard metrics for all features"""
-    today = date.today()
-    current_month = today.month
-    current_year = today.year
+    try:
+        today = date.today()
+        current_month = today.month
+        current_year = today.year
+    except Exception as e:
+        print(f"Error getting date: {e}")
+        today = date.today()
+        current_month = today.month
+        current_year = today.year
     
     # Budget metrics - current month
-    current_budget = db.query(Budget).filter(
-        Budget.user_id == current_user.id,
-        Budget.month == current_month,
-        Budget.year == current_year
-    ).first()
-    
     budget_metrics = None
-    if current_budget:
-        total_allocated = sum(cat.allocated_cents for cat in current_budget.categories)
+    try:
+        current_budget = db.query(Budget).filter(
+            Budget.user_id == current_user.id,
+            Budget.month == current_month,
+            Budget.year == current_year
+        ).first()
         
-        # Calculate total spent
-        total_spent = 0
-        for category in current_budget.categories:
-            regular_spent = db.query(func.sum(Transaction.amount_cents)).filter(
-                Transaction.category_id == category.id,
-                Transaction.is_split == False
-            ).scalar() or 0
+        if current_budget:
+            total_allocated = sum(cat.allocated_cents for cat in current_budget.categories)
             
-            split_spent = db.query(func.sum(TransactionSplit.amount_cents)).filter(
-                TransactionSplit.category_id == category.id
-            ).scalar() or 0
+            # Calculate total spent
+            total_spent = 0
+            for category in current_budget.categories:
+                try:
+                    regular_spent = db.query(func.sum(Transaction.amount_cents)).filter(
+                        Transaction.category_id == category.id,
+                        Transaction.is_split == False
+                    ).scalar() or 0
+                    
+                    split_spent = db.query(func.sum(TransactionSplit.amount_cents)).filter(
+                        TransactionSplit.category_id == category.id
+                    ).scalar() or 0
+                    
+                    total_spent += regular_spent + split_spent
+                except Exception as e:
+                    print(f"Error calculating spent for category {category.id}: {e}")
+                    continue
             
-            total_spent += regular_spent + split_spent
-        
-        budget_metrics = {
-            "budget_id": current_budget.id,
-            "income_cents": current_budget.income_cents,
-            "allocated_cents": total_allocated,
-            "spent_cents": total_spent,
-            "remaining_cents": current_budget.income_cents - total_allocated,
-            "available_cents": total_allocated - total_spent
-        }
+            budget_metrics = {
+                "budget_id": current_budget.id,
+                "income_cents": current_budget.income_cents,
+                "allocated_cents": total_allocated,
+                "spent_cents": total_spent,
+                "remaining_cents": current_budget.income_cents - total_allocated,
+                "available_cents": total_allocated - total_spent
+            }
+    except Exception as e:
+        print(f"Error getting budget metrics: {e}")
+        budget_metrics = None
     
     # Transaction metrics - this month
-    transaction_count = db.query(func.count(Transaction.id)).filter(
-        Transaction.user_id == current_user.id,
-        extract('month', Transaction.date) == current_month,
-        extract('year', Transaction.date) == current_year
-    ).scalar() or 0
+    transaction_count = 0
+    try:
+        transaction_count = db.query(func.count(Transaction.id)).filter(
+            Transaction.user_id == current_user.id,
+            extract('month', Transaction.date) == current_month,
+            extract('year', Transaction.date) == current_year
+        ).scalar() or 0
+    except Exception as e:
+        print(f"Error getting transaction count: {e}")
+        transaction_count = 0
     
     # Sinking funds metrics
-    sinking_funds = db.query(SinkingFund).filter(
-        SinkingFund.user_id == current_user.id,
-        SinkingFund.is_active == True
-    ).all()
-    
     sinking_funds_metrics = []
     total_sinking_funds_saved = 0
     total_sinking_funds_goal = 0
     
-    for fund in sinking_funds:
-        contributions = db.query(SinkingFundContribution).filter(
-            SinkingFundContribution.fund_id == fund.id
+    try:
+        sinking_funds = db.query(SinkingFund).filter(
+            SinkingFund.user_id == current_user.id,
+            SinkingFund.is_active == True
         ).all()
         
-        total_contributed = sum(c.amount_cents for c in contributions)
-        total_sinking_funds_saved += total_contributed
-        total_sinking_funds_goal += fund.target_amount_cents
-        
-        sinking_funds_metrics.append({
-            "id": fund.id,
-            "name": fund.name,
-            "target_amount_cents": fund.target_amount_cents,
-            "contributed_cents": total_contributed,
-            "remaining_cents": fund.target_amount_cents - total_contributed
-        })
+        for fund in sinking_funds:
+            try:
+                contributions = db.query(SinkingFundContribution).filter(
+                    SinkingFundContribution.fund_id == fund.id
+                ).all()
+                
+                total_contributed = sum(c.amount_cents for c in contributions)
+                total_sinking_funds_saved += total_contributed
+                total_sinking_funds_goal += fund.target_amount_cents
+                
+                sinking_funds_metrics.append({
+                    "id": fund.id,
+                    "name": fund.name,
+                    "target_amount_cents": fund.target_amount_cents,
+                    "contributed_cents": total_contributed,
+                    "remaining_cents": fund.target_amount_cents - total_contributed
+                })
+            except Exception as e:
+                print(f"Error processing sinking fund {fund.id}: {e}")
+                continue
+    except Exception as e:
+        print(f"Error getting sinking funds: {e}")
     
     # Net worth metrics
-    assets = db.query(Asset).filter(
-        Asset.user_id == current_user.id,
-        Asset.is_active == True
-    ).all()
-    
-    liabilities = db.query(Liability).filter(
-        Liability.user_id == current_user.id,
-        Liability.is_active == True
-    ).all()
-    
-    total_assets = sum(a.current_value_cents for a in assets)
-    total_liabilities = sum(l.current_balance_cents for l in liabilities)
-    net_worth = total_assets - total_liabilities
-    
     net_worth_metrics = {
-        "total_assets_cents": total_assets,
-        "total_liabilities_cents": total_liabilities,
-        "net_worth_cents": net_worth,
-        "asset_count": len(assets),
-        "liability_count": len(liabilities)
+        "total_assets_cents": 0,
+        "total_liabilities_cents": 0,
+        "net_worth_cents": 0,
+        "asset_count": 0,
+        "liability_count": 0
     }
+    
+    try:
+        assets = db.query(Asset).filter(
+            Asset.user_id == current_user.id,
+            Asset.is_active == True
+        ).all()
+        
+        liabilities = db.query(Liability).filter(
+            Liability.user_id == current_user.id,
+            Liability.is_active == True
+        ).all()
+        
+        total_assets = sum(a.current_value_cents for a in assets)
+        total_liabilities = sum(l.current_balance_cents for l in liabilities)
+        net_worth = total_assets - total_liabilities
+        
+        net_worth_metrics = {
+            "total_assets_cents": total_assets,
+            "total_liabilities_cents": total_liabilities,
+            "net_worth_cents": net_worth,
+            "asset_count": len(assets),
+            "liability_count": len(liabilities)
+        }
+    except Exception as e:
+        print(f"Error getting net worth metrics: {e}")
     
     # Financial goals metrics
-    goals = db.query(FinancialGoal).filter(
-        FinancialGoal.user_id == current_user.id,
-        FinancialGoal.is_active == True
-    ).all()
-    
-    active_goals = [g for g in goals if g.status == 'in_progress']
-    completed_goals = [g for g in goals if g.status == 'completed']
-    
     goals_metrics = {
-        "total_goals": len(goals),
-        "active_goals": len(active_goals),
-        "completed_goals": len(completed_goals),
-        "total_target_cents": sum(g.target_amount_cents for g in active_goals),
-        "total_saved_cents": sum(g.current_amount_cents for g in active_goals)
+        "total_goals": 0,
+        "active_goals": 0,
+        "completed_goals": 0,
+        "total_target_cents": 0,
+        "total_saved_cents": 0
     }
+    
+    try:
+        goals = db.query(FinancialGoal).filter(
+            FinancialGoal.user_id == current_user.id,
+            FinancialGoal.is_active == True
+        ).all()
+        
+        active_goals = [g for g in goals if g.status == 'in_progress']
+        completed_goals = [g for g in goals if g.status == 'completed']
+        
+        goals_metrics = {
+            "total_goals": len(goals),
+            "active_goals": len(active_goals),
+            "completed_goals": len(completed_goals),
+            "total_target_cents": sum(g.target_amount_cents for g in active_goals),
+            "total_saved_cents": sum(g.current_amount_cents for g in active_goals)
+        }
+    except Exception as e:
+        print(f"Error getting goals metrics: {e}")
     
     # Paycheck metrics - upcoming
-    upcoming_paychecks = db.query(Paycheck).filter(
-        Paycheck.user_id == current_user.id,
-        Paycheck.pay_date >= today
-    ).order_by(Paycheck.pay_date).limit(3).all()
-    
     paycheck_metrics = {
-        "upcoming_count": len(upcoming_paychecks),
-        "next_paycheck": {
-            "id": upcoming_paychecks[0].id,
-            "amount_cents": upcoming_paychecks[0].net_amount_cents,
-            "pay_date": upcoming_paychecks[0].pay_date.isoformat()
-        } if upcoming_paychecks else None
+        "upcoming_count": 0,
+        "next_paycheck": None
     }
+    
+    try:
+        upcoming_paychecks = db.query(Paycheck).filter(
+            Paycheck.user_id == current_user.id,
+            Paycheck.pay_date >= today
+        ).order_by(Paycheck.pay_date).limit(3).all()
+        
+        paycheck_metrics = {
+            "upcoming_count": len(upcoming_paychecks),
+            "next_paycheck": {
+                "id": upcoming_paychecks[0].id,
+                "amount_cents": upcoming_paychecks[0].net_amount_cents,
+                "pay_date": upcoming_paychecks[0].pay_date.isoformat()
+            } if upcoming_paychecks else None
+        }
+    except Exception as e:
+        print(f"Error getting paycheck metrics: {e}")
     
     return {
         "budget": budget_metrics,
