@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import engine, Base
-from app.api import auth, customers, invoices, payments, metrics, budgets, transactions, category_templates
+from app.api import auth, customers, invoices, payments, metrics, budgets, transactions, category_templates, sinking_funds
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -31,6 +31,7 @@ app.include_router(metrics.router)
 app.include_router(budgets.router)
 app.include_router(transactions.router)
 app.include_router(category_templates.router)
+app.include_router(sinking_funds.router)
 
 @app.get("/")
 def root():

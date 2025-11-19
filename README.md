@@ -84,6 +84,7 @@ npm run dev
 
 ## Features
 
+### Core Features
 - JWT authentication with refresh tokens
 - Customer management (CRUD)
 - Invoice creation with line items
@@ -94,6 +95,26 @@ npm run dev
 - Search, filter, pagination
 - Responsive design with animations
 - Skeleton loaders
+
+### Budget Management
+- Monthly budget creation and tracking
+- Unlimited budget categories with grouping
+- Category templates for quick setup
+- Budget allocation and balance tracking
+- Transaction recording and categorization
+- Spending analysis and reports
+
+### Sinking Funds / Savings Goals
+- Create savings goals with target amounts
+- Track progress with visual indicators
+- Monthly contribution planning
+- Deposit and withdrawal tracking
+- Multiple funds management
+- Progress calculations and projections
+- On-track status monitoring
+- Contribution history
+
+See `SINKING_FUNDS_QUICKSTART.md` for getting started with sinking funds.
 
 ## Environment Variables
 

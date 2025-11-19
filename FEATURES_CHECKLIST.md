@@ -311,3 +311,33 @@ All acceptance criteria from the original specification have been met:
 - ✅ Snappy, non-blocking UI
 
 The application is production-ready as a demo/MVP and can be extended with additional features as needed.
+
+## ✅ Sinking Funds / Savings Goals
+
+- [x] Create sinking funds with target amounts
+- [x] Set monthly contribution plans
+- [x] Optional target date for goals
+- [x] Add descriptions and color coding
+- [x] Track active/inactive status
+- [x] Visual progress bars with color coding
+- [x] Progress percentage calculation
+- [x] Remaining amount tracking
+- [x] Months to target projection
+- [x] On-track status indicator
+- [x] Add deposits to funds
+- [x] Record withdrawals (negative amounts)
+- [x] Add notes to contributions
+- [x] View contribution history
+- [x] Delete contributions with balance adjustment
+- [x] Summary dashboard with totals
+- [x] Overall progress across all funds
+- [x] Sort funds by name, progress, target, or date
+- [x] Edit fund details
+- [x] Deactivate/reactivate funds
+- [x] Delete funds with cascade delete
+- [x] Pagination for contributions
+- [x] Responsive UI with grid layout
+- [x] Color-coded progress indicators
+- [x] Automatic balance updates
+- [x] Contribution date tracking
+- [x] Fund detail page with full history
