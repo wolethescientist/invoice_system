@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
-// @ts-ignore
-import { FixedSizeList } from 'react-window'
+import { useState, useMemo, useCallback } from 'react'
+const ReactWindow = require('react-window')
+const FixedSizeList = ReactWindow.FixedSizeList
 
 interface Category {
   id?: number
@@ -368,6 +368,7 @@ export default function VirtualizedCategoryList({
         itemSize={itemHeight}
         itemData={itemData}
         overscanCount={5}
+        width="100%"
       >
         {CategoryItem}
       </FixedSizeList>
