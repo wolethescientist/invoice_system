@@ -372,3 +372,38 @@ The application is production-ready as a demo/MVP and can be extended with addit
 - [x] Automatic balance updates
 - [x] Contribution date tracking
 - [x] Fund detail page with full history
+
+
+## ✅ CSV Export / Data Export
+
+- [x] Export transactions to CSV
+- [x] Export split transaction details to CSV
+- [x] Export budget summary to CSV
+- [x] Filter exports by budget period
+- [x] Filter exports by category
+- [x] Filter exports by date range
+- [x] Filter exports by year/month
+- [x] Automatic filename generation with dates
+- [x] Standard CSV format (UTF-8, comma-separated)
+- [x] Compatible with Excel, Google Sheets, Numbers
+- [x] Currency formatting (decimal with 2 places)
+- [x] ISO date format (YYYY-MM-DD)
+- [x] Export button on Transactions page
+- [x] Export button on Budget detail page
+- [x] Export modal with filter options
+- [x] Simple ExportButton component
+- [x] Full ExportModal component with filters
+- [x] Loading states during export
+- [x] Error handling and user feedback
+- [x] Browser download trigger
+- [x] Filename from Content-Disposition header
+- [x] Authentication required for all exports
+- [x] User can only export their own data
+- [x] In-memory CSV generation (no temp files)
+- [x] Efficient database queries
+- [x] Backend service layer (CSVExportService)
+- [x] Three export endpoints (/api/exports/*)
+- [x] API documentation for export endpoints
+- [x] Test script for export functionality
+- [x] Comprehensive user guide
+- [x] Quick start guide

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { api } from '@/lib/api'
 import VirtualizedCategoryList from '@/components/VirtualizedCategoryList'
+import ExportButton from '@/components/ExportButton'
 
 interface Category {
   id?: number
@@ -220,6 +221,12 @@ export default function BudgetDetailPage() {
             <div className="flex gap-2">
               {!editing ? (
                 <>
+                  <ExportButton
+                    type="budgets"
+                    filters={{ budgetId: Number(budgetId) }}
+                    label="Export"
+                    className="px-3 py-2 text-sm"
+                  />
                   <button
                     onClick={() => router.push(`/budgets/${budgetId}/funding`)}
                     className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"

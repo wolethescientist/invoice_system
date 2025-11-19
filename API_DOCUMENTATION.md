@@ -1656,3 +1656,103 @@ Tracks suggestion performance
 
 ---
 
+
+
+---
+
+## Export Endpoints
+
+### Export Transactions to CSV
+
+Export transaction data as a CSV file.
+
+**Endpoint:** `GET /api/exports/transactions/csv`
+
+**Query Parameters:**
+- `budget_id` (optional): Filter by budget ID
+- `category_id` (optional): Filter by category ID
+- `start_date` (optional): Start date in YYYY-MM-DD format
+- `end_date` (optional): End date in YYYY-MM-DD format
+
+**Response:** `200 OK`
+- Content-Type: `text/csv`
+- Content-Disposition: `attachment; filename="transactions_YYYY-MM-DD_YYYY-MM-DD.csv"`
+
+**CSV Format:**
+```csv
+Transaction ID,Date,Amount,Category,Notes,Budget Period,Is Split
+123,2024-01-15,45.99,Groceries,Weekly shopping,01/2024,No
+124,2024-01-16,120.00,Split Transaction,,01/2024,Yes
+```
+
+**Example:**
+```bash
+curl -H "Authorization: Bearer <token>" \
+  "http://localhost:8000/api/exports/transactions/csv?start_date=2024-01-01&end_date=2024-01-31"
+```
+
+---
+
+### Export Split Transactions to CSV
+
+Export detailed split transaction data as a CSV file.
+
+**Endpoint:** `GET /api/exports/transactions/splits/csv`
+
+**Query Parameters:**
+- `budget_id` (optional): Filter by budget ID
+- `start_date` (optional): Start date in YYYY-MM-DD format
+- `end_date` (optional): End date in YYYY-MM-DD format
+
+**Response:** `200 OK`
+- Content-Type: `text/csv`
+- Content-Disposition: `attachment; filename="transaction_splits_YYYY-MM-DD_YYYY-MM-DD.csv"`
+
+**CSV Format:**
+```csv
+Transaction ID,Split ID,Date,Total Amount,Split Amount,Category,Transaction Notes,Split Notes,Budget Period
+124,1,2024-01-16,120.00,80.00,Groceries,Costco trip,Food items,01/2024
+124,2,2024-01-16,120.00,40.00,Household,Costco trip,Cleaning supplies,01/2024
+```
+
+**Example:**
+```bash
+curl -H "Authorization: Bearer <token>" \
+  "http://localhost:8000/api/exports/transactions/splits/csv?budget_id=5"
+```
+
+---
+
+### Export Budget Summary to CSV
+
+Export budget summary with category allocations and spending as a CSV file.
+
+**Endpoint:** `GET /api/exports/budgets/csv`
+
+**Query Parameters:**
+- `budget_id` (optional): Export specific budget by ID
+- `year` (optional): Filter by year
+- `month` (optional): Filter by month (1-12)
+
+**Response:** `200 OK`
+- Content-Type: `text/csv`
+- Content-Disposition: `attachment; filename="budget_summary_YYYY_MM.csv"`
+
+**CSV Format:**
+```csv
+Budget Period,Category,Category Group,Allocated Amount,Spent Amount,Remaining Amount,Total Income,Total Allocated,Budget Remaining
+01/2024,Groceries,Essentials,500.00,345.67,154.33,3000.00,2800.00,200.00
+01/2024,Gas,Transportation,200.00,156.89,43.11,3000.00,2800.00,200.00
+```
+
+**Example:**
+```bash
+curl -H "Authorization: Bearer <token>" \
+  "http://localhost:8000/api/exports/budgets/csv?year=2024&month=1"
+```
+
+**Errors:**
+- `401` - Unauthorized (invalid or missing token)
+- `404` - No data found for specified filters
+
+---
