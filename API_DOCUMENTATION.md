@@ -993,3 +993,401 @@ Delete a budget and all its categories.
 6. **Zero-Based**: For a balanced budget, `income_cents` must equal `total_allocated_cents`
 
 ---
+
+
+---
+
+## Financial Roadmap Endpoints
+
+### Get All Goals
+
+Retrieve all financial goals for the authenticated user.
+
+**Endpoint:** `GET /api/financial-goals`
+
+**Query Parameters:**
+- `status` (optional): Filter by status (`active`, `completed`, `paused`, `cancelled`)
+
+**Response:** `200 OK`
+```json
+[
+  {
+    "id": 1,
+    "user_id": 1,
+    "name": "Emergency Fund",
+    "description": "6 months of expenses",
+    "goal_type": "emergency_fund",
+    "target_amount": 15000.00,
+    "current_amount": 5000.00,
+    "monthly_contribution": 500.00,
+    "target_date": "2026-12-31",
+    "start_date": "2025-01-01",
+    "status": "active",
+    "priority": 1,
+    "notes": "Top priority",
+    "created_at": "2025-01-01T00:00:00",
+    "updated_at": "2025-01-15T00:00:00",
+    "contributions": [],
+    "milestones": []
+  }
+]
+```
+
+---
+
+### Get Goal Summary
+
+Get summary statistics for all goals.
+
+**Endpoint:** `GET /api/financial-goals/summary`
+
+**Response:** `200 OK`
+```json
+{
+  "total_goals": 5,
+  "active_goals": 3,
+  "completed_goals": 2,
+  "total_target_amount": 75000.00,
+  "total_current_amount": 25000.00,
+  "total_monthly_contributions": 1500.00,
+  "overall_progress_percentage": 33.33
+}
+```
+
+---
+
+### Get Goal by ID
+
+Retrieve a specific financial goal with all contributions and milestones.
+
+**Endpoint:** `GET /api/financial-goals/{goal_id}`
+
+**Response:** `200 OK`
+```json
+{
+  "id": 1,
+  "user_id": 1,
+  "name": "Emergency Fund",
+  "description": "6 months of expenses",
+  "goal_type": "emergency_fund",
+  "target_amount": 15000.00,
+  "current_amount": 5000.00,
+  "monthly_contribution": 500.00,
+  "target_date": "2026-12-31",
+  "start_date": "2025-01-01",
+  "status": "active",
+  "priority": 1,
+  "notes": "Top priority",
+  "created_at": "2025-01-01T00:00:00",
+  "updated_at": "2025-01-15T00:00:00",
+  "contributions": [
+    {
+      "id": 1,
+      "goal_id": 1,
+      "amount": 500.00,
+      "contribution_date": "2025-01-15",
+      "notes": "First contribution",
+      "created_at": "2025-01-15T00:00:00"
+    }
+  ],
+  "milestones": [
+    {
+      "id": 1,
+      "goal_id": 1,
+      "name": "First $5,000",
+      "target_amount": 5000.00,
+      "target_date": "2025-06-30",
+      "achieved": true,
+      "achieved_date": "2025-06-15",
+      "created_at": "2025-01-01T00:00:00"
+    }
+  ]
+}
+```
+
+**Errors:**
+- `404` - Goal not found
+
+---
+
+### Create Goal
+
+Create a new financial goal.
+
+**Endpoint:** `POST /api/financial-goals`
+
+**Request Body:**
+```json
+{
+  "name": "House Down Payment",
+  "description": "Save for first home",
+  "goal_type": "home_purchase",
+  "target_amount": 50000.00,
+  "monthly_contribution": 1000.00,
+  "target_date": "2028-06-30",
+  "start_date": "2025-01-01",
+  "priority": 2,
+  "notes": "Focus after emergency fund"
+}
+```
+
+**Goal Types:**
+- `savings` - General savings
+- `debt_repayment` - Pay off debt
+- `investment` - Investment goal
+- `emergency_fund` - Emergency fund
+- `retirement` - Retirement savings
+- `education` - Education fund
+- `home_purchase` - Home down payment
+- `vehicle` - Vehicle purchase
+- `vacation` - Vacation fund
+- `other` - Custom goal
+
+**Response:** `200 OK`
+```json
+{
+  "id": 2,
+  "user_id": 1,
+  "name": "House Down Payment",
+  "description": "Save for first home",
+  "goal_type": "home_purchase",
+  "target_amount": 50000.00,
+  "current_amount": 0.00,
+  "monthly_contribution": 1000.00,
+  "target_date": "2028-06-30",
+  "start_date": "2025-01-01",
+  "status": "active",
+  "priority": 2,
+  "notes": "Focus after emergency fund",
+  "created_at": "2025-01-15T00:00:00",
+  "updated_at": "2025-01-15T00:00:00",
+  "contributions": [],
+  "milestones": []
+}
+```
+
+---
+
+### Update Goal
+
+Update an existing financial goal.
+
+**Endpoint:** `PUT /api/financial-goals/{goal_id}`
+
+**Request Body:** (all fields optional)
+```json
+{
+  "name": "Updated Name",
+  "monthly_contribution": 1200.00,
+  "status": "paused",
+  "priority": 1
+}
+```
+
+**Response:** `200 OK` (returns updated goal)
+
+**Errors:**
+- `404` - Goal not found
+
+---
+
+### Delete Goal
+
+Delete a financial goal and all associated contributions and milestones.
+
+**Endpoint:** `DELETE /api/financial-goals/{goal_id}`
+
+**Response:** `200 OK`
+```json
+{
+  "message": "Goal deleted successfully"
+}
+```
+
+**Errors:**
+- `404` - Goal not found
+
+---
+
+### Get Goal Projection
+
+Calculate projection for goal completion with optional contribution override.
+
+**Endpoint:** `GET /api/financial-goals/{goal_id}/projection`
+
+**Query Parameters:**
+- `monthly_contribution` (optional): Override monthly contribution for simulation
+
+**Response:** `200 OK`
+```json
+{
+  "goal_id": 1,
+  "projected_completion_date": "2026-10-15",
+  "months_remaining": 20,
+  "on_track": true,
+  "required_monthly_contribution": 500.00,
+  "projected_final_amount": 15000.00,
+  "shortfall": 0.00
+}
+```
+
+**Errors:**
+- `404` - Goal not found
+
+---
+
+### Add Contribution
+
+Add a contribution to a goal. Automatically updates goal's current amount.
+
+**Endpoint:** `POST /api/financial-goals/{goal_id}/contributions`
+
+**Request Body:**
+```json
+{
+  "amount": 500.00,
+  "contribution_date": "2025-01-15",
+  "notes": "Monthly contribution"
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "id": 1,
+  "goal_id": 1,
+  "amount": 500.00,
+  "contribution_date": "2025-01-15",
+  "notes": "Monthly contribution",
+  "created_at": "2025-01-15T00:00:00"
+}
+```
+
+**Errors:**
+- `404` - Goal not found
+
+---
+
+### Get Contributions
+
+Retrieve all contributions for a goal.
+
+**Endpoint:** `GET /api/financial-goals/{goal_id}/contributions`
+
+**Response:** `200 OK`
+```json
+[
+  {
+    "id": 1,
+    "goal_id": 1,
+    "amount": 500.00,
+    "contribution_date": "2025-01-15",
+    "notes": "Monthly contribution",
+    "created_at": "2025-01-15T00:00:00"
+  }
+]
+```
+
+**Errors:**
+- `404` - Goal not found
+
+---
+
+### Create Milestone
+
+Create a milestone for a goal.
+
+**Endpoint:** `POST /api/financial-goals/{goal_id}/milestones`
+
+**Request Body:**
+```json
+{
+  "name": "First $5,000",
+  "target_amount": 5000.00,
+  "target_date": "2025-06-30"
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "id": 1,
+  "goal_id": 1,
+  "name": "First $5,000",
+  "target_amount": 5000.00,
+  "target_date": "2025-06-30",
+  "achieved": false,
+  "achieved_date": null,
+  "created_at": "2025-01-15T00:00:00"
+}
+```
+
+**Errors:**
+- `404` - Goal not found
+
+---
+
+### Get Milestones
+
+Retrieve all milestones for a goal.
+
+**Endpoint:** `GET /api/financial-goals/{goal_id}/milestones`
+
+**Response:** `200 OK`
+```json
+[
+  {
+    "id": 1,
+    "goal_id": 1,
+    "name": "First $5,000",
+    "target_amount": 5000.00,
+    "target_date": "2025-06-30",
+    "achieved": true,
+    "achieved_date": "2025-06-15",
+    "created_at": "2025-01-15T00:00:00"
+  }
+]
+```
+
+**Errors:**
+- `404` - Goal not found
+
+---
+
+### Update Milestone
+
+Update a milestone (typically to mark as achieved).
+
+**Endpoint:** `PUT /api/financial-goals/{goal_id}/milestones/{milestone_id}`
+
+**Request Body:** (all fields optional)
+```json
+{
+  "achieved": true
+}
+```
+
+**Response:** `200 OK` (returns updated milestone)
+
+**Errors:**
+- `404` - Goal or milestone not found
+
+---
+
+### Delete Milestone
+
+Delete a milestone.
+
+**Endpoint:** `DELETE /api/financial-goals/{goal_id}/milestones/{milestone_id}`
+
+**Response:** `200 OK`
+```json
+{
+  "message": "Milestone deleted successfully"
+}
+```
+
+**Errors:**
+- `404` - Goal or milestone not found
+
+---
