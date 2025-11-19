@@ -1,17 +1,28 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
+import SplitTransactionForm from '@/components/SplitTransactionForm'
+
+interface TransactionSplit {
+  id: number
+  transaction_id: number
+  category_id: number
+  category_name: string
+  amount_cents: number
+  notes: string | null
+}
 
 interface Transaction {
   id: number
   budget_id: number
-  category_id: number
-  category_name: string
+  category_id: number | null
+  category_name?: string
   amount_cents: number
   date: string
   notes: string | null
+  is_split: boolean
+  splits: TransactionSplit[]
   created_at: string
 }
 
@@ -28,7 +39,6 @@ interface Category {
 }
 
 export default function TransactionsPage() {
-  const router = useRouter()
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [budgets, setBudgets] = useState<Budget[]>([])
   const [categories, setCategories] = useState<Category[]>([])
@@ -44,8 +54,11 @@ export default function TransactionsPage() {
     category_id: 0,
     amount: '',
     date: new Date().toISOString().split('T')[0],
-    notes: ''
+    notes: '',
+    is_split: false
   })
+  const [splits, setSplits] = useState<any[]>([])
+  const [splitsValid, setSplitsValid] = useState(false)
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
 
@@ -99,11 +112,18 @@ export default function TransactionsPage() {
     const errors: Record<string, string> = {}
     
     if (!formData.budget_id) errors.budget_id = 'Budget is required'
-    if (!formData.category_id) errors.category_id = 'Category is required'
+    
+    if (!formData.is_split && !formData.category_id) {
+      errors.category_id = 'Category is required'
+    }
     
     const amount = parseFloat(formData.amount)
     if (!formData.amount || isNaN(amount) || amount <= 0) {
       errors.amount = 'Amount must be greater than 0'
+    }
+    
+    if (formData.is_split && !splitsValid) {
+      errors.splits = 'Splits must equal transaction amount'
     }
     
     if (!formData.date) errors.date = 'Date is required'
@@ -119,13 +139,22 @@ export default function TransactionsPage() {
     
     setSaving(true)
     try {
-      await api.post('/api/transactions', {
+      const payload: any = {
         budget_id: formData.budget_id,
-        category_id: formData.category_id,
         amount_cents: Math.round(parseFloat(formData.amount) * 100),
         date: formData.date,
-        notes: formData.notes || null
-      })
+        notes: formData.notes || null,
+        is_split: formData.is_split
+      }
+
+      if (formData.is_split) {
+        payload.category_id = null
+        payload.splits = splits
+      } else {
+        payload.category_id = formData.category_id
+      }
+      
+      await api.post('/api/transactions', payload)
       
       setShowForm(false)
       setFormData({
@@ -133,8 +162,10 @@ export default function TransactionsPage() {
         category_id: categories[0]?.id || 0,
         amount: '',
         date: new Date().toISOString().split('T')[0],
-        notes: ''
+        notes: '',
+        is_split: false
       })
+      setSplits([])
       setFormErrors({})
       await fetchTransactions()
     } catch (error: any) {
@@ -240,29 +271,31 @@ export default function TransactionsPage() {
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Category
-                  </label>
-                  <select
-                    value={formData.category_id}
-                    onChange={(e) => setFormData({ ...formData, category_id: parseInt(e.target.value) })}
-                    disabled={!formData.budget_id || categories.length === 0}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 ${
-                      formErrors.category_id ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  >
-                    <option value="">Select category</option>
-                    {categories.map(category => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
-                  {formErrors.category_id && (
-                    <p className="text-red-500 text-sm mt-1">{formErrors.category_id}</p>
-                  )}
-                </div>
+                {!formData.is_split && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Category
+                    </label>
+                    <select
+                      value={formData.category_id}
+                      onChange={(e) => setFormData({ ...formData, category_id: parseInt(e.target.value) })}
+                      disabled={!formData.budget_id || categories.length === 0}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 ${
+                        formErrors.category_id ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    >
+                      <option value="">Select category</option>
+                      {categories.map(category => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                    {formErrors.category_id && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.category_id}</p>
+                    )}
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -308,17 +341,47 @@ export default function TransactionsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Notes (optional)
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.is_split}
+                    onChange={(e) => setFormData({ ...formData, is_split: e.target.checked, category_id: 0 })}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Split across multiple categories
+                  </span>
                 </label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  rows={2}
-                  placeholder="Add any notes about this transaction..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
               </div>
+
+              {formData.is_split && formData.amount && parseFloat(formData.amount) > 0 && (
+                <div className="md:col-span-2">
+                  <SplitTransactionForm
+                    totalAmountCents={Math.round(parseFloat(formData.amount) * 100)}
+                    categories={categories}
+                    onSplitsChange={setSplits}
+                    onValidChange={setSplitsValid}
+                  />
+                  {formErrors.splits && (
+                    <p className="text-red-500 text-sm mt-2">{formErrors.splits}</p>
+                  )}
+                </div>
+              )}
+
+              {!formData.is_split && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Notes (optional)
+                  </label>
+                  <textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    rows={2}
+                    placeholder="Add any notes about this transaction..."
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              )}
 
               {formErrors.submit && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
@@ -406,14 +469,33 @@ export default function TransactionsPage() {
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-1">
-                        <span className="font-semibold text-gray-900">
-                          {transaction.category_name}
-                        </span>
+                        {transaction.is_split ? (
+                          <span className="font-semibold text-gray-900 flex items-center gap-2">
+                            <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded">SPLIT</span>
+                            Multiple Categories
+                          </span>
+                        ) : (
+                          <span className="font-semibold text-gray-900">
+                            {transaction.category_name}
+                          </span>
+                        )}
                         <span className="text-sm text-gray-500">
                           {formatDate(transaction.date)}
                         </span>
                       </div>
-                      {transaction.notes && (
+                      {transaction.is_split && transaction.splits && transaction.splits.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          {transaction.splits.map(split => (
+                            <div key={split.id} className="flex items-center gap-2 text-sm text-gray-600">
+                              <span className="w-2 h-2 bg-purple-400 rounded-full"></span>
+                              <span className="font-medium">{split.category_name}:</span>
+                              <span>{formatCurrency(split.amount_cents)}</span>
+                              {split.notes && <span className="text-gray-500">- {split.notes}</span>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {!transaction.is_split && transaction.notes && (
                         <p className="text-sm text-gray-600 mt-1">{transaction.notes}</p>
                       )}
                     </div>
