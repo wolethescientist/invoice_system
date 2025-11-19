@@ -1391,3 +1391,268 @@ Delete a milestone.
 - `404` - Goal or milestone not found
 
 ---
+
+
+---
+
+## Category Suggestions Endpoints
+
+Smart category suggestions based on transaction history and patterns.
+
+### Get Category Suggestions
+
+Get intelligent category suggestions for a transaction based on description and amount.
+
+**Endpoint:** `POST /api/category-suggestions/suggest`
+
+**Query Parameters:**
+- `limit` (optional): Number of suggestions to return (1-10, default: 3)
+
+**Request Body:**
+```json
+{
+  "budget_id": 1,
+  "notes": "Grocery shopping at Walmart",
+  "amount_cents": 5000
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "suggestions": [
+    {
+      "category_id": 5,
+      "category_name": "Groceries",
+      "confidence": 0.95,
+      "reason": "exact_match",
+      "usage_count": 12
+    },
+    {
+      "category_id": 8,
+      "category_name": "Shopping",
+      "confidence": 0.65,
+      "reason": "keyword_match",
+      "usage_count": 5
+    },
+    {
+      "category_id": 3,
+      "category_name": "Household",
+      "confidence": 0.45,
+      "reason": "similar_amount",
+      "usage_count": 3
+    }
+  ]
+}
+```
+
+**Suggestion Reasons:**
+- `exact_match`: Identical description used before
+- `keyword_match`: Similar keywords in past transactions
+- `similar_amount`: Amount matches previous transactions
+- `frequently_used`: Popular category fallback
+
+**Confidence Scores:**
+- `0.8-1.0`: High confidence (exact or strong match)
+- `0.5-0.79`: Medium confidence (keyword match)
+- `0.3-0.49`: Low confidence (amount or frequency based)
+
+**Errors:**
+- `404` - Budget not found
+- `401` - Unauthorized
+
+**Notes:**
+- Suggestions appear after typing 3+ characters
+- Results are debounced on frontend (500ms)
+- Empty notes returns popular categories
+- Amount is optional but improves suggestions
+
+---
+
+### Submit Suggestion Feedback
+
+Log whether a suggestion was accepted or rejected to improve future suggestions.
+
+**Endpoint:** `POST /api/category-suggestions/feedback`
+
+**Request Body:**
+```json
+{
+  "transaction_id": 123,
+  "suggested_category_id": 5,
+  "actual_category_id": 5,
+  "pattern_text": "grocery shopping at walmart"
+}
+```
+
+**Response:** `204 No Content`
+
+**Fields:**
+- `transaction_id` (optional): ID of created transaction
+- `suggested_category_id`: Category that was suggested
+- `actual_category_id`: Category that was actually chosen
+- `pattern_text`: Transaction description/notes
+
+**Behavior:**
+- If `suggested_category_id` == `actual_category_id`: Suggestion accepted (increases confidence)
+- If different: Suggestion rejected (decreases confidence for wrong pattern)
+- Automatically learns from the actual category chosen
+
+**Errors:**
+- `401` - Unauthorized
+
+**Notes:**
+- Call this after creating a transaction
+- Helps improve suggestion accuracy over time
+- Feedback is user-specific and private
+
+---
+
+### Get Suggestion Statistics
+
+Get statistics about suggestion accuracy and performance.
+
+**Endpoint:** `GET /api/category-suggestions/stats`
+
+**Query Parameters:**
+- `days` (optional): Number of days to analyze (1-365, default: 30)
+
+**Response:** `200 OK`
+```json
+{
+  "total_suggestions": 45,
+  "accepted": 38,
+  "rejected": 7,
+  "accuracy": 84.44
+}
+```
+
+**Fields:**
+- `total_suggestions`: Total number of suggestions made
+- `accepted`: Number of suggestions that were accepted
+- `rejected`: Number of suggestions that were rejected
+- `accuracy`: Acceptance rate as percentage (0-100)
+
+**Errors:**
+- `401` - Unauthorized
+
+**Notes:**
+- Returns empty stats if no suggestions in time period
+- Accuracy improves over time as system learns
+- Typical accuracy: 30-50% (new), 70-85% (established), 85-95% (mature)
+
+---
+
+### Example Usage Flow
+
+**1. User starts typing transaction description:**
+```javascript
+// Frontend debounces input and calls suggest endpoint
+const response = await fetch('/api/category-suggestions/suggest?limit=3', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer <token>',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    budget_id: 1,
+    notes: "Coffee at Starbucks",
+    amount_cents: 550
+  })
+});
+
+const { suggestions } = await response.json();
+// Display suggestions to user
+```
+
+**2. User selects a suggestion or chooses different category:**
+```javascript
+// Create transaction
+const transaction = await createTransaction({
+  budget_id: 1,
+  category_id: selectedCategoryId,
+  amount_cents: 550,
+  notes: "Coffee at Starbucks",
+  date: "2024-01-15"
+});
+
+// Submit feedback
+await fetch('/api/category-suggestions/feedback', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer <token>',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    transaction_id: transaction.id,
+    suggested_category_id: suggestions[0].category_id,
+    actual_category_id: selectedCategoryId,
+    pattern_text: "coffee at starbucks"
+  })
+});
+```
+
+**3. View statistics:**
+```javascript
+const stats = await fetch('/api/category-suggestions/stats?days=30', {
+  headers: {
+    'Authorization': 'Bearer <token>'
+  }
+});
+
+const data = await stats.json();
+console.log(`Accuracy: ${data.accuracy}%`);
+```
+
+---
+
+### Database Tables
+
+**category_patterns:**
+Stores learned patterns for suggestions
+- `user_id`: User who owns the pattern
+- `category_id`: Associated budget category
+- `pattern_text`: Normalized transaction description
+- `confidence_score`: Confidence level (0.0-1.0)
+- `usage_count`: Times pattern was used
+- `last_used`: Last usage timestamp
+
+**category_suggestion_logs:**
+Tracks suggestion performance
+- `user_id`: User who received suggestion
+- `transaction_id`: Associated transaction
+- `suggested_category_id`: What was suggested
+- `actual_category_id`: What was chosen
+- `was_accepted`: 1 if accepted, 0 if rejected
+- `pattern_text`: Transaction description
+
+---
+
+### Algorithm Details
+
+**Pattern Matching Priority:**
+1. **Exact Match** (highest): Identical normalized text
+2. **Keyword Match**: Shared keywords between descriptions
+3. **Amount Match**: Similar transaction amounts (±20%)
+4. **Frequency**: Most used categories (fallback)
+
+**Text Normalization:**
+- Convert to lowercase
+- Remove special characters
+- Trim whitespace
+- Remove common stop words
+
+**Confidence Calculation:**
+- Exact match: 0.7-1.0 (increases with usage)
+- Keyword match: 0.5-0.8 (based on keyword overlap)
+- Amount match: 0.5 (fixed)
+- Frequency: 0.3 (fixed)
+
+**Learning Behavior:**
+- Accepted suggestion: +0.1 confidence (max 1.0)
+- Rejected suggestion: -0.2 confidence (min 0.1)
+- New pattern: 0.7 initial confidence
+- Pattern reuse: +1 usage count
+
+---
+
