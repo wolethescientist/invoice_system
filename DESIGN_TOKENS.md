@@ -1,25 +1,53 @@
-# Design Tokens
+# Design Tokens - Enhanced UI System
 
 ## Color Palette
 
 ### Brand Colors (Blue)
 - `brand-50`: #F5F9FF - Lightest background
 - `brand-100`: #EEF6FF - Light background
-- `brand-300`: #BFE3FF - Light accent
+- `brand-200`: #D6EBFF - Light accent
+- `brand-300`: #BFE3FF - Medium light accent
+- `brand-400`: #8CCFFF - Medium accent
 - `brand-500`: #0B6CF1 - Primary brand color
+- `brand-600`: #0A5FD6 - Hover state
 - `brand-700`: #055BB5 - Dark brand color
+- `brand-800`: #044A94 - Darker
+- `brand-900`: #033973 - Darkest
 
 ### Neutral Colors
+- `neutral-50`: #FAFAFA - Lightest
 - `neutral-100`: #F6F9FF - Page background
+- `neutral-200`: #F0F4F8 - Light background
 - `neutral-300`: #E6EEF9 - Borders, dividers
+- `neutral-400`: #D1DBE8 - Medium borders
+- `neutral-500`: #9CA3AF - Disabled text
 - `neutral-600`: #6B7280 - Secondary text
-- `neutral-900`: #1F2937 - Primary text
+- `neutral-700`: #4B5563 - Primary text
+- `neutral-800`: #374151 - Dark text
+- `neutral-900`: #1F2937 - Darkest text
 
 ### Status Colors
-- Draft: Gray (`neutral-200` bg, `neutral-700` text)
-- Sent: Blue (`blue-100` bg, `blue-700` text)
-- Paid: Green (`green-100` bg, `green-700` text)
-- Overdue: Red (`red-100` bg, `red-700` text)
+
+#### Success (Green)
+- `success-50`: #F0FDF4
+- `success-100`: #DCFCE7
+- `success-500`: #22C55E
+- `success-600`: #16A34A
+- `success-700`: #15803D
+
+#### Warning (Amber)
+- `warning-50`: #FFFBEB
+- `warning-100`: #FEF3C7
+- `warning-500`: #F59E0B
+- `warning-600`: #D97706
+- `warning-700`: #B45309
+
+#### Error (Red)
+- `error-50`: #FEF2F2
+- `error-100`: #FEE2E2
+- `error-500`: #EF4444
+- `error-600`: #DC2626
+- `error-700`: #B91C1C
 
 ## Typography
 

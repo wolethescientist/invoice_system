@@ -3,23 +3,104 @@
 @tailwind utilities;
 
 @layer base {
+  * {
+    @apply border-neutral-300;
+  }
+  
   body {
-    @apply bg-neutral-100 text-neutral-900;
+    @apply bg-gradient-to-br from-neutral-50 via-neutral-100 to-brand-50 text-neutral-900 antialiased;
+  }
+  
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  /* Card component */
+  .card {
+    @apply bg-white rounded-xl shadow-soft border border-neutral-200 p-6 transition-all duration-300;
+  }
+  
+  .card-hover {
+    @apply hover:shadow-medium hover:-translate-y-1;
+  }
+  
+  /* Glass morphism effect */
+  .glass {
+    @apply bg-white/80 backdrop-blur-md border border-white/20;
+  }
+  
+  /* Input styles */
+  .input {
+    @apply w-full px-4 py-2.5 rounded-lg border border-neutral-300 bg-white text-neutral-900 placeholder-neutral-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent;
+  }
+  
+  /* Badge styles */
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+  }
+  
+  .badge-success {
+    @apply bg-success-100 text-success-700;
+  }
+  
+  .badge-warning {
+    @apply bg-warning-100 text-warning-700;
+  }
+  
+  .badge-error {
+    @apply bg-error-100 text-error-700;
+  }
+  
+  .badge-info {
+    @apply bg-brand-100 text-brand-700;
+  }
+  
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-brand-600 to-brand-400 bg-clip-text text-transparent;
+  }
+  
+  /* Stat card */
+  .stat-card {
+    @apply card relative overflow-hidden;
+  }
+  
+  .stat-card::before {
+    content: '';
+    @apply absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-500 to-brand-400;
   }
 }
 
 @layer utilities {
+  /* Skeleton loader */
   .skeleton {
-    @apply animate-pulse bg-gradient-to-r from-neutral-200 via-neutral-300 to-neutral-200 bg-[length:200%_100%];
-    animation: shimmer 1.5s infinite;
+    @apply animate-shimmer bg-gradient-to-r from-neutral-200 via-neutral-300 to-neutral-200 bg-[length:200%_100%] rounded;
   }
   
-  @keyframes shimmer {
-    0% {
-      background-position: -200% 0;
-    }
-    100% {
-      background-position: 200% 0;
-    }
+  /* Scrollbar styles */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-neutral-100 rounded-full;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-neutral-400 rounded-full hover:bg-neutral-500;
+  }
+  
+  /* Focus visible for accessibility */
+  .focus-ring {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2;
+  }
+  
+  /* Truncate with tooltip */
+  .truncate-tooltip {
+    @apply truncate cursor-help;
   }
 }
