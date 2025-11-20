@@ -61,13 +61,27 @@ export default function InvoiceDetailPage() {
     )
   }
 
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'paid':
+        return 'success'
+      case 'sent':
+        return 'info'
+      case 'overdue':
+        return 'error'
+      case 'draft':
+      default:
+        return 'neutral'
+    }
+  }
+
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-neutral-900">{invoice.invoice_number}</h1>
-            <Badge variant={invoice.status} className="mt-2">
+            <Badge variant={getStatusBadgeVariant(invoice.status)} className="mt-2">
               {invoice.status.toUpperCase()}
             </Badge>
           </div>

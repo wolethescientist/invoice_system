@@ -26,6 +26,20 @@ export default function InvoicesPage() {
     },
   })
 
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'paid':
+        return 'success'
+      case 'sent':
+        return 'info'
+      case 'overdue':
+        return 'error'
+      case 'draft':
+      default:
+        return 'neutral'
+    }
+  }
+
   return (
     <DashboardLayout>
       <div className="flex justify-between items-center mb-8">
@@ -99,7 +113,7 @@ export default function InvoicesPage() {
                     {formatDate(invoice.due_date)}
                   </td>
                   <td className="px-6 py-4">
-                    <Badge variant={invoice.status}>{invoice.status.toUpperCase()}</Badge>
+                    <Badge variant={getStatusBadgeVariant(invoice.status)}>{invoice.status.toUpperCase()}</Badge>
                   </td>
                   <td className="px-6 py-4 text-sm text-right font-medium">
                     {formatCurrency(invoice.total_cents)}
