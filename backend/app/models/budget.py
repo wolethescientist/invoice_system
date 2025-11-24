@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, UniqueConstraint, Index, Text
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, UniqueConstraint, Index, Text, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.core.database import Base
@@ -31,7 +31,7 @@ class BudgetCategory(Base):
     order = Column(Integer, default=0)
     description = Column(Text, nullable=True)  # Optional description for categories
     category_group = Column(String(100), nullable=True)  # For grouping categories
-    is_active = Column(Integer, default=1)  # Soft delete support
+    is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

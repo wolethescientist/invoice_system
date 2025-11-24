@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Date, DateTime, ForeignKey, Enum as SQLEnum, Index
+from sqlalchemy import Column, Integer, String, Float, Date, DateTime, ForeignKey, Enum as SQLEnum, Index, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
@@ -38,8 +38,8 @@ class Asset(Base):
     institution = Column(String)
     account_number_last4 = Column(String(4))
     notes = Column(String)
-    is_liquid = Column(Integer, default=1)  # 0 or 1 (boolean)
-    is_active = Column(Integer, default=1)  # 0 or 1 (boolean)
+    is_liquid = Column(Boolean, default=True)
+    is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -64,7 +64,7 @@ class Liability(Base):
     institution = Column(String)
     account_number_last4 = Column(String(4))
     notes = Column(String)
-    is_active = Column(Integer, default=1)  # 0 or 1 (boolean)
+    is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

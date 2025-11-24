@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Date, DateTime, ForeignKey, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, Float, Date, DateTime, ForeignKey, Enum as SQLEnum, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
@@ -39,7 +39,7 @@ class FinancialGoal(Base):
     target_date = Column(Date, nullable=False)
     start_date = Column(Date, nullable=False)
     status = Column(SQLEnum(GoalStatus), default=GoalStatus.ACTIVE)
-    is_active = Column(Integer, default=1)  # 0 or 1 (boolean) - for filtering
+    is_active = Column(Boolean, default=True)
     priority = Column(Integer, default=1)  # 1-5, 1 being highest
     notes = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
