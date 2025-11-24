@@ -22,7 +22,7 @@ class Paycheck(Base):
     net_amount_cents = Column(Integer, nullable=False)  # Net pay amount in cents
     frequency = Column(SQLEnum(PaycheckFrequency), nullable=False)
     pay_date = Column(Date, nullable=False)  # Next/upcoming pay date
-    is_active = Column(Boolean, default=True, nullable=False)
+    is_active = Column(Integer, default=1, nullable=False)  # 0 or 1 (boolean) to match database
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

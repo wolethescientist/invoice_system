@@ -15,7 +15,7 @@ class SinkingFund(Base):
     target_date = Column(DateTime, nullable=True)  # Optional target completion date
     description = Column(Text, nullable=True)
     color = Column(String(50), nullable=True)  # For UI visualization
-    is_active = Column(Boolean, default=True)
+    is_active = Column(Integer, default=1)  # 0 or 1 (boolean) to match database
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

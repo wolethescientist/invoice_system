@@ -161,7 +161,7 @@ def get_dashboard_metrics(
     try:
         sinking_funds = db.query(SinkingFund).filter(
             SinkingFund.user_id == current_user.id,
-            SinkingFund.is_active == True
+            SinkingFund.is_active == 1
         ).all()
         
         for fund in sinking_funds:
@@ -199,12 +199,12 @@ def get_dashboard_metrics(
     try:
         assets = db.query(Asset).filter(
             Asset.user_id == current_user.id,
-            Asset.is_active == True
+            Asset.is_active == 1
         ).all()
         
         liabilities = db.query(Liability).filter(
             Liability.user_id == current_user.id,
-            Liability.is_active == True
+            Liability.is_active == 1
         ).all()
         
         total_assets = sum(a.current_value_cents for a in assets)
@@ -259,7 +259,7 @@ def get_dashboard_metrics(
     try:
         upcoming_paychecks = db.query(Paycheck).filter(
             Paycheck.user_id == current_user.id,
-            Paycheck.is_active == True,
+            Paycheck.is_active == 1,
             Paycheck.pay_date >= today
         ).order_by(Paycheck.pay_date).limit(3).all()
         

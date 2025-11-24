@@ -22,23 +22,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Check for token in localStorage on mount
     const token = getAccessToken()
     if (token) {
+      // Token exists, assume authenticated
+      // It will be validated on first API call
       setIsAuthenticated(true)
-      // Verify token is still valid by making a test request
-      api.get('/api/metrics/dashboard')
-        .then(() => {
-          setIsAuthenticated(true)
-        })
-        .catch(() => {
-          // Token is invalid, clear it
-          setAccessToken(null)
-          setIsAuthenticated(false)
-        })
-        .finally(() => {
-          setIsLoading(false)
-        })
-    } else {
-      setIsLoading(false)
     }
+    setIsLoading(false)
   }, [])
 
   const login = async (email: string, password: string) => {
