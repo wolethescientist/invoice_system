@@ -28,12 +28,12 @@ def calculate_net_worth(user_id: int, db: Session) -> dict:
     """Calculate current net worth for a user"""
     assets = db.query(Asset).filter(
         Asset.user_id == user_id,
-        Asset.is_active == 1
+        Asset.is_active == True
     ).all()
     
     liabilities = db.query(Liability).filter(
         Liability.user_id == user_id,
-        Liability.is_active == 1
+        Liability.is_active == True
     ).all()
     
     total_assets = sum(a.current_value for a in assets)
@@ -149,7 +149,7 @@ def get_assets(
     query = db.query(Asset).filter(Asset.user_id == current_user.id)
     
     if not include_inactive:
-        query = query.filter(Asset.is_active == 1)
+        query = query.filter(Asset.is_active == True)
     
     return query.order_by(Asset.asset_type, Asset.name).all()
 
@@ -268,7 +268,7 @@ def get_liabilities(
     query = db.query(Liability).filter(Liability.user_id == current_user.id)
     
     if not include_inactive:
-        query = query.filter(Liability.is_active == 1)
+        query = query.filter(Liability.is_active == True)
     
     return query.order_by(Liability.liability_type, Liability.name).all()
 
@@ -491,7 +491,7 @@ def get_asset_breakdown(
     """Get asset breakdown by type"""
     assets = db.query(Asset).filter(
         Asset.user_id == current_user.id,
-        Asset.is_active == 1
+        Asset.is_active == True
     ).all()
     
     total_value = sum(a.current_value for a in assets)
@@ -526,7 +526,7 @@ def get_liability_breakdown(
     """Get liability breakdown by type"""
     liabilities = db.query(Liability).filter(
         Liability.user_id == current_user.id,
-        Liability.is_active == 1
+        Liability.is_active == True
     ).all()
     
     total_balance = sum(l.current_balance for l in liabilities)
@@ -579,7 +579,7 @@ def get_projection(
     # Get liabilities with payments
     liabilities = db.query(Liability).filter(
         Liability.user_id == current_user.id,
-        Liability.is_active == 1
+        Liability.is_active == True
     ).all()
     
     monthly_debt_payments = sum(l.minimum_payment for l in liabilities)

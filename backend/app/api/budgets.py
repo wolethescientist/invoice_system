@@ -113,7 +113,7 @@ def get_budget(
     if include_categories and (category_limit or category_group):
         category_query = db.query(BudgetCategory).filter(
             BudgetCategory.budget_id == budget_id,
-            BudgetCategory.is_active == 1
+            BudgetCategory.is_active == True
         )
         
         if category_group:
@@ -311,7 +311,7 @@ def get_budget_categories(
     # Build query
     query = db.query(BudgetCategory).filter(
         BudgetCategory.budget_id == budget_id,
-        BudgetCategory.is_active == 1
+        BudgetCategory.is_active == True
     )
     
     # Apply filters
@@ -467,7 +467,7 @@ def get_category_groups(
         func.sum(BudgetCategory.allocated_cents).label('total_allocated')
     ).filter(
         BudgetCategory.budget_id == budget_id,
-        BudgetCategory.is_active == 1,
+        BudgetCategory.is_active == True,
         BudgetCategory.category_group.isnot(None)
     ).group_by(BudgetCategory.category_group).all()
     

@@ -109,7 +109,7 @@ class CategorySuggestionService:
             CategoryPattern.user_id == user_id,
             CategoryPattern.pattern_text == pattern_text,
             BudgetCategory.budget_id == budget_id,
-            BudgetCategory.is_active == 1
+            BudgetCategory.is_active == True
         ).order_by(
             desc(CategoryPattern.confidence_score),
             desc(CategoryPattern.usage_count)
@@ -179,7 +179,7 @@ class CategorySuggestionService:
                 CategoryPattern.user_id == user_id,
                 CategoryPattern.pattern_text.like(f"%{keyword}%"),
                 BudgetCategory.budget_id == budget_id,
-                BudgetCategory.is_active == 1
+                BudgetCategory.is_active == True
             ).all()
             
             for pattern, category in patterns:
@@ -237,7 +237,7 @@ class CategorySuggestionService:
             Transaction.amount_cents.between(min_amount, max_amount),
             Transaction.is_split == False,
             BudgetCategory.budget_id == budget_id,
-            BudgetCategory.is_active == 1
+            BudgetCategory.is_active == True
         ).group_by(
             Transaction.category_id, BudgetCategory.name
         ).order_by(
@@ -275,7 +275,7 @@ class CategorySuggestionService:
             )
         ).filter(
             BudgetCategory.budget_id == budget_id,
-            BudgetCategory.is_active == 1
+            BudgetCategory.is_active == True
         ).group_by(
             BudgetCategory.id, BudgetCategory.name
         ).order_by(

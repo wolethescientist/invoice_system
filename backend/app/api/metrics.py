@@ -161,7 +161,7 @@ def get_dashboard_metrics(
     try:
         sinking_funds = db.query(SinkingFund).filter(
             SinkingFund.user_id == current_user.id,
-            SinkingFund.is_active == 1
+            SinkingFund.is_active == True
         ).all()
         
         for fund in sinking_funds:
@@ -199,12 +199,12 @@ def get_dashboard_metrics(
     try:
         assets = db.query(Asset).filter(
             Asset.user_id == current_user.id,
-            Asset.is_active == 1
+            Asset.is_active == True
         ).all()
         
         liabilities = db.query(Liability).filter(
             Liability.user_id == current_user.id,
-            Liability.is_active == 1
+            Liability.is_active == True
         ).all()
         
         total_assets = sum(a.current_value_cents for a in assets)
@@ -235,8 +235,8 @@ def get_dashboard_metrics(
             FinancialGoal.user_id == current_user.id
         ).all()
         
-        # Filter by is_active (which is an Integer column: 0 or 1)
-        active_records = [g for g in goals if g.is_active == 1]
+        # Filter by is_active
+        active_records = [g for g in goals if g.is_active == True or g.is_active == 1]
         active_goals = [g for g in active_records if g.status.value == 'active']
         completed_goals = [g for g in active_records if g.status.value == 'completed']
         
@@ -259,7 +259,7 @@ def get_dashboard_metrics(
     try:
         upcoming_paychecks = db.query(Paycheck).filter(
             Paycheck.user_id == current_user.id,
-            Paycheck.is_active == 1,
+            Paycheck.is_active == True,
             Paycheck.pay_date >= today
         ).order_by(Paycheck.pay_date).limit(3).all()
         
