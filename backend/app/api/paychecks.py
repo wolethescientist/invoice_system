@@ -57,9 +57,9 @@ def create_paycheck(
     paycheck = Paycheck(
         user_id=current_user.id,
         name=paycheck_data.name,
-        amount_cents=paycheck_data.amount_cents,
+        net_amount_cents=paycheck_data.net_amount_cents,
         frequency=paycheck_data.frequency,
-        next_date=paycheck_data.next_date,
+        pay_date=paycheck_data.pay_date,
         is_active=paycheck_data.is_active
     )
     db.add(paycheck)
@@ -92,7 +92,7 @@ def list_paychecks(
     if active_only:
         query = query.filter(Paycheck.is_active == True)
     
-    paychecks = query.order_by(Paycheck.next_date).all()
+    paychecks = query.order_by(Paycheck.pay_date).all()
     return paychecks
 
 
@@ -139,12 +139,12 @@ def update_paycheck(
     # Update fields
     if paycheck_data.name is not None:
         paycheck.name = paycheck_data.name
-    if paycheck_data.amount_cents is not None:
-        paycheck.amount_cents = paycheck_data.amount_cents
+    if paycheck_data.net_amount_cents is not None:
+        paycheck.net_amount_cents = paycheck_data.net_amount_cents
     if paycheck_data.frequency is not None:
         paycheck.frequency = paycheck_data.frequency
-    if paycheck_data.next_date is not None:
-        paycheck.next_date = paycheck_data.next_date
+    if paycheck_data.pay_date is not None:
+        paycheck.pay_date = paycheck_data.pay_date
     if paycheck_data.is_active is not None:
         paycheck.is_active = paycheck_data.is_active
     
@@ -223,12 +223,12 @@ def get_paycheck_schedule(
     else:  # MONTHLY
         count = months_ahead
     
-    upcoming_dates = generate_upcoming_dates(paycheck.next_date, paycheck.frequency, count)
+    upcoming_dates = generate_upcoming_dates(paycheck.pay_date, paycheck.frequency, count)
     
     return {
         "paycheck": paycheck,
         "upcoming_dates": upcoming_dates,
-        "next_amount_cents": paycheck.amount_cents
+        "next_amount_cents": paycheck.net_amount_cents
     }
 
 
@@ -479,7 +479,7 @@ def auto_allocate_paychecks(
     
     for paycheck in paychecks:
         # Generate dates for this paycheck
-        upcoming_dates = generate_upcoming_dates(paycheck.next_date, paycheck.frequency, 12)
+        upcoming_dates = generate_upcoming_dates(paycheck.pay_date, paycheck.frequency, 12)
         
         # Filter dates that fall in this budget month
         month_dates = [d for d in upcoming_dates if start_date <= d <= end_date]
@@ -499,7 +499,7 @@ def auto_allocate_paychecks(
             instance = PaycheckInstance(
                 paycheck_id=paycheck.id,
                 budget_id=budget_id,
-                amount_cents=paycheck.amount_cents,
+                amount_cents=paycheck.net_amount_cents,
                 date=paycheck_date,
                 is_received=False
             )

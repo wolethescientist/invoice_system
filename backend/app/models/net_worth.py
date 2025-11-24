@@ -34,7 +34,7 @@ class Asset(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     name = Column(String, nullable=False)
     asset_type = Column(SQLEnum(AssetType), nullable=False)
-    current_value = Column(Float, nullable=False)
+    current_value_cents = Column(Integer, nullable=False)  # Value in cents
     institution = Column(String)
     account_number_last4 = Column(String(4))
     notes = Column(String)
@@ -58,9 +58,9 @@ class Liability(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     name = Column(String, nullable=False)
     liability_type = Column(SQLEnum(LiabilityType), nullable=False)
-    current_balance = Column(Float, nullable=False)
+    current_balance_cents = Column(Integer, nullable=False)  # Balance in cents
     interest_rate = Column(Float, default=0.0)
-    minimum_payment = Column(Float, default=0.0)
+    minimum_payment_cents = Column(Integer, default=0)  # Minimum payment in cents
     institution = Column(String)
     account_number_last4 = Column(String(4))
     notes = Column(String)

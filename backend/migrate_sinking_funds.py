@@ -1,6 +1,12 @@
 """
 Migration script for sinking funds feature
 Creates the sinking_funds and sinking_fund_contributions tables
+
+For Supabase: Run the SQL file directly in Supabase SQL Editor
+File: backend/supabase_migrations/sinking_funds.sql
+
+For local development with SQLAlchemy:
+python backend/migrate_sinking_funds.py
 """
 from sqlalchemy import create_engine, text
 from app.core.config import settings
@@ -8,18 +14,12 @@ from app.core.config import settings
 def migrate():
     engine = create_engine(settings.DATABASE_URL)
     
-    with engine.connect() as conn:
-        # Create sinking_funds table
-        conn.execute(text("""
-            CREATE TABLE IF NOT EXISTS sinking_funds (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                name VARCHAR(255) NOT NULL,
-                target_cents INTEGER NOT NULL,
-                current_balance_cents INTEGER NOT NULL DEFAULT 0,
-                monthly_contribution_cents INTEGER NOT NULL DEFAULT 0,
-                target_date DATETIME,
-                description TEXT,
+    # Read the SQL migration file
+    try:
+        with open('backend/supabase_migrations/sinking_funds.sql', 'r') as f:
+            sql_content = f.read()
+        
+        # Execute the migratioXT,
                 color VARCHAR(50),
                 is_active BOOLEAN DEFAULT 1,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

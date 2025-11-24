@@ -33,12 +33,13 @@ class FinancialGoal(Base):
     name = Column(String, nullable=False)
     description = Column(String)
     goal_type = Column(SQLEnum(GoalType), nullable=False)
-    target_amount = Column(Float, nullable=False)
-    current_amount = Column(Float, default=0.0)
-    monthly_contribution = Column(Float, default=0.0)
+    target_amount_cents = Column(Integer, nullable=False)  # Target amount in cents
+    current_amount_cents = Column(Integer, default=0)  # Current amount in cents
+    monthly_contribution_cents = Column(Integer, default=0)  # Monthly contribution in cents
     target_date = Column(Date, nullable=False)
     start_date = Column(Date, nullable=False)
     status = Column(SQLEnum(GoalStatus), default=GoalStatus.ACTIVE)
+    is_active = Column(Integer, default=1)  # 0 or 1 (boolean) - for filtering
     priority = Column(Integer, default=1)  # 1-5, 1 being highest
     notes = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)

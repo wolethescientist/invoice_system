@@ -19,9 +19,9 @@ class Paycheck(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     name = Column(String(255), nullable=False)  # e.g., "Main Job", "Side Gig"
-    amount_cents = Column(Integer, nullable=False)
+    net_amount_cents = Column(Integer, nullable=False)  # Net pay amount in cents
     frequency = Column(SQLEnum(PaycheckFrequency), nullable=False)
-    next_date = Column(Date, nullable=False)
+    pay_date = Column(Date, nullable=False)  # Next/upcoming pay date
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -156,6 +156,7 @@ def get_dashboard_metrics(
     sinking_funds_metrics = []
     total_sinking_funds_saved = 0
     total_sinking_funds_goal = 0
+    sinking_funds = []
     
     try:
         sinking_funds = db.query(SinkingFund).filter(
@@ -171,14 +172,14 @@ def get_dashboard_metrics(
                 
                 total_contributed = sum(c.amount_cents for c in contributions)
                 total_sinking_funds_saved += total_contributed
-                total_sinking_funds_goal += fund.target_amount_cents
+                total_sinking_funds_goal += fund.target_cents
                 
                 sinking_funds_metrics.append({
                     "id": fund.id,
                     "name": fund.name,
-                    "target_amount_cents": fund.target_amount_cents,
+                    "target_amount_cents": fund.target_cents,
                     "contributed_cents": total_contributed,
-                    "remaining_cents": fund.target_amount_cents - total_contributed
+                    "remaining_cents": fund.target_cents - total_contributed
                 })
             except Exception as e:
                 print(f"Error processing sinking fund {fund.id}: {e}")
@@ -231,15 +232,16 @@ def get_dashboard_metrics(
     
     try:
         goals = db.query(FinancialGoal).filter(
-            FinancialGoal.user_id == current_user.id,
-            FinancialGoal.is_active == True
+            FinancialGoal.user_id == current_user.id
         ).all()
         
-        active_goals = [g for g in goals if g.status == 'in_progress']
-        completed_goals = [g for g in goals if g.status == 'completed']
+        # Filter by is_active (which is an Integer column: 0 or 1)
+        active_records = [g for g in goals if g.is_active == 1]
+        active_goals = [g for g in active_records if g.status.value == 'active']
+        completed_goals = [g for g in active_records if g.status.value == 'completed']
         
         goals_metrics = {
-            "total_goals": len(goals),
+            "total_goals": len(active_records),
             "active_goals": len(active_goals),
             "completed_goals": len(completed_goals),
             "total_target_cents": sum(g.target_amount_cents for g in active_goals),
@@ -257,6 +259,7 @@ def get_dashboard_metrics(
     try:
         upcoming_paychecks = db.query(Paycheck).filter(
             Paycheck.user_id == current_user.id,
+            Paycheck.is_active == True,
             Paycheck.pay_date >= today
         ).order_by(Paycheck.pay_date).limit(3).all()
         

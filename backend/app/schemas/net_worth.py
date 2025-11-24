@@ -30,7 +30,7 @@ class LiabilityType(str, Enum):
 class AssetBase(BaseModel):
     name: str
     asset_type: AssetType
-    current_value: float
+    current_value_cents: int
     institution: Optional[str] = None
     account_number_last4: Optional[str] = None
     notes: Optional[str] = None
@@ -45,7 +45,7 @@ class AssetCreate(AssetBase):
 class AssetUpdate(BaseModel):
     name: Optional[str] = None
     asset_type: Optional[AssetType] = None
-    current_value: Optional[float] = None
+    current_value_cents: Optional[int] = None
     institution: Optional[str] = None
     account_number_last4: Optional[str] = None
     notes: Optional[str] = None
@@ -67,9 +67,9 @@ class Asset(AssetBase):
 class LiabilityBase(BaseModel):
     name: str
     liability_type: LiabilityType
-    current_balance: float
+    current_balance_cents: int
     interest_rate: float = 0.0
-    minimum_payment: float = 0.0
+    minimum_payment_cents: int = 0
     institution: Optional[str] = None
     account_number_last4: Optional[str] = None
     notes: Optional[str] = None
@@ -83,9 +83,9 @@ class LiabilityCreate(LiabilityBase):
 class LiabilityUpdate(BaseModel):
     name: Optional[str] = None
     liability_type: Optional[LiabilityType] = None
-    current_balance: Optional[float] = None
+    current_balance_cents: Optional[int] = None
     interest_rate: Optional[float] = None
-    minimum_payment: Optional[float] = None
+    minimum_payment_cents: Optional[int] = None
     institution: Optional[str] = None
     account_number_last4: Optional[str] = None
     notes: Optional[str] = None

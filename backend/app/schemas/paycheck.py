@@ -34,9 +34,9 @@ class PaycheckAllocation(PaycheckAllocationBase):
 
 class PaycheckBase(BaseModel):
     name: str = Field(min_length=1, max_length=255)
-    amount_cents: int = Field(ge=0)
+    net_amount_cents: int = Field(ge=0)
     frequency: PaycheckFrequency
-    next_date: date
+    pay_date: date
     is_active: bool = True
 
 
@@ -45,18 +45,18 @@ class PaycheckCreate(PaycheckBase):
     
     @validator('allocations')
     def validate_allocations(cls, v, values):
-        if 'amount_cents' in values:
+        if 'net_amount_cents' in values:
             total = sum(a.amount_cents for a in v)
-            if total > values['amount_cents']:
+            if total > values['net_amount_cents']:
                 raise ValueError('Total allocations cannot exceed paycheck amount')
         return v
 
 
 class PaycheckUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=255)
-    amount_cents: Optional[int] = Field(None, ge=0)
+    net_amount_cents: Optional[int] = Field(None, ge=0)
     frequency: Optional[PaycheckFrequency] = None
-    next_date: Optional[date] = None
+    pay_date: Optional[date] = None
     is_active: Optional[bool] = None
     allocations: Optional[List[PaycheckAllocationCreate]] = None
 

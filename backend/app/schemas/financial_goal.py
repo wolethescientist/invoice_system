@@ -75,8 +75,8 @@ class FinancialGoalBase(BaseModel):
     name: str
     description: Optional[str] = None
     goal_type: GoalType
-    target_amount: float = Field(..., gt=0)
-    monthly_contribution: float = Field(default=0.0, ge=0)
+    target_amount_cents: int = Field(..., gt=0)
+    monthly_contribution_cents: int = Field(default=0, ge=0)
     target_date: date
     start_date: date
     priority: int = Field(default=1, ge=1, le=5)
@@ -91,20 +91,22 @@ class FinancialGoalUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     goal_type: Optional[GoalType] = None
-    target_amount: Optional[float] = Field(None, gt=0)
-    current_amount: Optional[float] = Field(None, ge=0)
-    monthly_contribution: Optional[float] = Field(None, ge=0)
+    target_amount_cents: Optional[int] = Field(None, gt=0)
+    current_amount_cents: Optional[int] = Field(None, ge=0)
+    monthly_contribution_cents: Optional[int] = Field(None, ge=0)
     target_date: Optional[date] = None
     status: Optional[GoalStatus] = None
     priority: Optional[int] = Field(None, ge=1, le=5)
     notes: Optional[str] = None
+    is_active: Optional[bool] = None
 
 
 class FinancialGoal(FinancialGoalBase):
     id: int
     user_id: int
-    current_amount: float
+    current_amount_cents: int
     status: GoalStatus
+    is_active: bool
     created_at: datetime
     updated_at: datetime
     contributions: List[GoalContribution] = []
