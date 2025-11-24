@@ -11,11 +11,29 @@ export const api = axios.create({
 
 let accessToken: string | null = null
 
-export const setAccessToken = (token: string | null) => {
-  accessToken = token
+// Initialize token from localStorage on load
+if (typeof window !== 'undefined') {
+  accessToken = localStorage.getItem('access_token')
 }
 
-export const getAccessToken = () => accessToken
+export const setAccessToken = (token: string | null) => {
+  accessToken = token
+  if (typeof window !== 'undefined') {
+    if (token) {
+      localStorage.setItem('access_token', token)
+    } else {
+      localStorage.removeItem('access_token')
+    }
+  }
+}
+
+export const getAccessToken = () => {
+  // Always check localStorage in case it was updated elsewhere
+  if (typeof window !== 'undefined' && !accessToken) {
+    accessToken = localStorage.getItem('access_token')
+  }
+  return accessToken
+}
 
 api.interceptors.request.use((config) => {
   if (accessToken) {
