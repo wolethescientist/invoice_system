@@ -87,7 +87,27 @@ def create_goal(
     db.add(db_goal)
     db.commit()
     db.refresh(db_goal)
-    return FinancialGoalSchema.from_orm(db_goal)
+    
+    # Return without loading relationships to avoid column mismatch errors
+    return FinancialGoalSchema(
+        id=db_goal.id,
+        user_id=db_goal.user_id,
+        name=db_goal.name,
+        description=db_goal.description,
+        goal_type=db_goal.goal_type,
+        target_amount=db_goal.target_amount_cents / 100,
+        current_amount=db_goal.current_amount_cents / 100,
+        monthly_contribution=db_goal.monthly_contribution_cents / 100,
+        target_date=db_goal.target_date,
+        start_date=db_goal.start_date,
+        status=db_goal.status,
+        priority=db_goal.priority,
+        notes=db_goal.notes,
+        created_at=db_goal.created_at,
+        updated_at=db_goal.updated_at,
+        contributions=[],
+        milestones=[]
+    )
 
 
 @router.get("/", response_model=List[FinancialGoalSchema])
@@ -103,7 +123,30 @@ def get_goals(
         query = query.filter(FinancialGoal.status == status)
     
     goals = query.order_by(FinancialGoal.priority, FinancialGoal.target_date).all()
-    return [FinancialGoalSchema.from_orm(goal) for goal in goals]
+    
+    # Return without loading relationships
+    return [
+        FinancialGoalSchema(
+            id=goal.id,
+            user_id=goal.user_id,
+            name=goal.name,
+            description=goal.description,
+            goal_type=goal.goal_type,
+            target_amount=goal.target_amount_cents / 100,
+            current_amount=goal.current_amount_cents / 100,
+            monthly_contribution=goal.monthly_contribution_cents / 100,
+            target_date=goal.target_date,
+            start_date=goal.start_date,
+            status=goal.status,
+            priority=goal.priority,
+            notes=goal.notes,
+            created_at=goal.created_at,
+            updated_at=goal.updated_at,
+            contributions=[],
+            milestones=[]
+        )
+        for goal in goals
+    ]
 
 
 @router.get("/summary", response_model=GoalSummary)
@@ -149,7 +192,26 @@ def get_goal(
     if not goal:
         raise HTTPException(status_code=404, detail="Goal not found")
     
-    return FinancialGoalSchema.from_orm(goal)
+    # Return without loading relationships
+    return FinancialGoalSchema(
+        id=goal.id,
+        user_id=goal.user_id,
+        name=goal.name,
+        description=goal.description,
+        goal_type=goal.goal_type,
+        target_amount=goal.target_amount_cents / 100,
+        current_amount=goal.current_amount_cents / 100,
+        monthly_contribution=goal.monthly_contribution_cents / 100,
+        target_date=goal.target_date,
+        start_date=goal.start_date,
+        status=goal.status,
+        priority=goal.priority,
+        notes=goal.notes,
+        created_at=goal.created_at,
+        updated_at=goal.updated_at,
+        contributions=[],
+        milestones=[]
+    )
 
 
 @router.get("/{goal_id}/projection", response_model=GoalProjection)
@@ -209,7 +271,27 @@ def update_goal(
     
     db.commit()
     db.refresh(goal)
-    return FinancialGoalSchema.from_orm(goal)
+    
+    # Return without loading relationships
+    return FinancialGoalSchema(
+        id=goal.id,
+        user_id=goal.user_id,
+        name=goal.name,
+        description=goal.description,
+        goal_type=goal.goal_type,
+        target_amount=goal.target_amount_cents / 100,
+        current_amount=goal.current_amount_cents / 100,
+        monthly_contribution=goal.monthly_contribution_cents / 100,
+        target_date=goal.target_date,
+        start_date=goal.start_date,
+        status=goal.status,
+        priority=goal.priority,
+        notes=goal.notes,
+        created_at=goal.created_at,
+        updated_at=goal.updated_at,
+        contributions=[],
+        milestones=[]
+    )
 
 
 @router.delete("/{goal_id}")
