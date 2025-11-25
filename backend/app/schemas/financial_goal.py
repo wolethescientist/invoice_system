@@ -84,6 +84,7 @@ class FinancialGoalBase(BaseModel):
 
 
 class FinancialGoalCreate(FinancialGoalBase):
+    """Schema for creating a goal - accepts dollars, converts to cents"""
     pass
 
 
@@ -98,6 +99,22 @@ class FinancialGoalUpdate(BaseModel):
     status: Optional[GoalStatus] = None
     priority: Optional[int] = Field(None, ge=1, le=5)
     notes: Optional[str] = None
+    
+    def to_db_dict(self):
+        """Convert dollar amounts to cents for database storage"""
+        data = self.model_dump(exclude_unset=True)
+        if 'target_amount' in data:
+            data['target_amount_cents'] = int(data.pop('target_amount') * 100)
+        if 'current_amount' in data:
+            data['current_amount_cents'] = int(data.pop('current_amount') * 100)
+        if 'monthly_contribution' in data:
+            data['monthly_contribution_cents'] = int(data.pop('monthly_contribution') * 100)
+        # Convert enum to lowercase string
+        if 'goal_type' in data:
+            data['goal_type'] = data['goal_type'].value if hasattr(data['goal_type'], 'value') else data['goal_type']
+        if 'status' in data:
+            data['status'] = data['status'].value if hasattr(data['status'], 'value') else data['status']
+        return data
 
 
 class FinancialGoal(FinancialGoalBase):
@@ -112,6 +129,29 @@ class FinancialGoal(FinancialGoalBase):
 
     class Config:
         from_attributes = True
+    
+    @classmethod
+    def from_orm(cls, obj):
+        """Convert cents to dollars when reading from database"""
+        return cls(
+            id=obj.id,
+            user_id=obj.user_id,
+            name=obj.name,
+            description=obj.description,
+            goal_type=obj.goal_type,
+            target_amount=obj.target_amount_cents / 100,
+            current_amount=obj.current_amount_cents / 100,
+            monthly_contribution=obj.monthly_contribution_cents / 100,
+            target_date=obj.target_date,
+            start_date=obj.start_date,
+            status=obj.status,
+            priority=obj.priority,
+            notes=obj.notes,
+            created_at=obj.created_at,
+            updated_at=obj.updated_at,
+            contributions=obj.contributions,
+            milestones=obj.milestones
+        )
 
 
 class GoalProjection(BaseModel):

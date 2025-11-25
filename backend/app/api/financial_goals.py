@@ -26,16 +26,21 @@ router = APIRouter(prefix="/api/financial-goals", tags=["financial-goals"])
 
 def calculate_projection(goal: FinancialGoal) -> GoalProjection:
     """Calculate projection for goal completion"""
-    remaining_amount = goal.target_amount - goal.current_amount
+    # Convert cents to dollars for calculations
+    target_amount = goal.target_amount_cents / 100
+    current_amount = goal.current_amount_cents / 100
+    monthly_contribution = goal.monthly_contribution_cents / 100
     
-    if goal.monthly_contribution <= 0:
+    remaining_amount = target_amount - current_amount
+    
+    if monthly_contribution <= 0:
         # No contributions, can't project
         months_remaining = 999
         projected_date = goal.target_date
         on_track = False
         required_monthly = remaining_amount
     else:
-        months_remaining = int(remaining_amount / goal.monthly_contribution) + 1
+        months_remaining = int(remaining_amount / monthly_contribution) + 1
         projected_date = date.today() + relativedelta(months=months_remaining)
         
         # Calculate required monthly contribution to meet target date
@@ -44,13 +49,13 @@ def calculate_projection(goal: FinancialGoal) -> GoalProjection:
         
         if months_to_target <= 0:
             required_monthly = remaining_amount
-            on_track = goal.current_amount >= goal.target_amount
+            on_track = current_amount >= target_amount
         else:
             required_monthly = remaining_amount / months_to_target
-            on_track = goal.monthly_contribution >= required_monthly
+            on_track = monthly_contribution >= required_monthly
     
-    projected_final = goal.current_amount + (goal.monthly_contribution * months_remaining)
-    shortfall = max(0, goal.target_amount - projected_final)
+    projected_final = current_amount + (monthly_contribution * months_remaining)
+    shortfall = max(0, target_amount - projected_final)
     
     return GoalProjection(
         goal_id=goal.id,
@@ -70,14 +75,19 @@ def create_goal(
     current_user: User = Depends(get_current_user)
 ):
     """Create a new financial goal"""
+    # Convert dollar amounts to cents for database storage
+    goal_data = goal.model_dump()
+    goal_data['target_amount_cents'] = int(goal_data.pop('target_amount') * 100)
+    goal_data['monthly_contribution_cents'] = int(goal_data.pop('monthly_contribution') * 100)
+    
     db_goal = FinancialGoal(
         user_id=current_user.id,
-        **goal.model_dump()
+        **goal_data
     )
     db.add(db_goal)
     db.commit()
     db.refresh(db_goal)
-    return db_goal
+    return FinancialGoalSchema.from_orm(db_goal)
 
 
 @router.get("/", response_model=List[FinancialGoalSchema])
@@ -93,7 +103,7 @@ def get_goals(
         query = query.filter(FinancialGoal.status == status)
     
     goals = query.order_by(FinancialGoal.priority, FinancialGoal.target_date).all()
-    return goals
+    return [FinancialGoalSchema.from_orm(goal) for goal in goals]
 
 
 @router.get("/summary", response_model=GoalSummary)
@@ -107,9 +117,9 @@ def get_goals_summary(
     total_goals = len(goals)
     active_goals = len([g for g in goals if g.status == 'active'])
     completed_goals = len([g for g in goals if g.status == 'completed'])
-    total_target = sum(g.target_amount for g in goals)
-    total_current = sum(g.current_amount for g in goals)
-    total_monthly = sum(g.monthly_contribution for g in goals if g.status == 'active')
+    total_target = sum(g.target_amount_cents / 100 for g in goals)
+    total_current = sum(g.current_amount_cents / 100 for g in goals)
+    total_monthly = sum(g.monthly_contribution_cents / 100 for g in goals if g.status == 'active')
     
     progress_pct = (total_current / total_target * 100) if total_target > 0 else 0
     
@@ -139,7 +149,7 @@ def get_goal(
     if not goal:
         raise HTTPException(status_code=404, detail="Goal not found")
     
-    return goal
+    return FinancialGoalSchema.from_orm(goal)
 
 
 @router.get("/{goal_id}/projection", response_model=GoalProjection)
@@ -160,10 +170,10 @@ def get_goal_projection(
     
     # Temporarily override monthly contribution for projection
     if monthly_contribution is not None:
-        original_contribution = goal.monthly_contribution
-        goal.monthly_contribution = monthly_contribution
+        original_contribution = goal.monthly_contribution_cents
+        goal.monthly_contribution_cents = int(monthly_contribution * 100)
         projection = calculate_projection(goal)
-        goal.monthly_contribution = original_contribution
+        goal.monthly_contribution_cents = original_contribution
     else:
         projection = calculate_projection(goal)
     
@@ -186,19 +196,20 @@ def update_goal(
     if not goal:
         raise HTTPException(status_code=404, detail="Goal not found")
     
-    update_data = goal_update.model_dump(exclude_unset=True)
+    # Convert dollar amounts to cents
+    update_data = goal_update.to_db_dict()
     for field, value in update_data.items():
         setattr(goal, field, value)
     
     goal.updated_at = datetime.utcnow()
     
     # Auto-complete if target reached
-    if goal.current_amount >= goal.target_amount and goal.status == 'active':
+    if goal.current_amount_cents >= goal.target_amount_cents and goal.status == 'active':
         goal.status = 'completed'
     
     db.commit()
     db.refresh(goal)
-    return goal
+    return FinancialGoalSchema.from_orm(goal)
 
 
 @router.delete("/{goal_id}")
@@ -248,7 +259,7 @@ def add_contribution(
     goal.updated_at = datetime.utcnow()
     
     # Auto-complete if target reached
-    if goal.current_amount >= goal.target_amount and goal.status == 'active':
+    if goal.current_amount_cents >= goal.target_amount_cents and goal.status == 'active':
         goal.status = 'completed'
     
     db.add(db_contribution)
