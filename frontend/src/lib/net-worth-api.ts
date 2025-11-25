@@ -97,12 +97,24 @@ export async function getAsset(id: number): Promise<Asset> {
 }
 
 export async function createAsset(data: Partial<Asset>): Promise<Asset> {
-  const response = await api.post('/api/net-worth/assets', data);
+  // Convert dollars to cents for API
+  const apiData = {
+    ...data,
+    current_value_cents: data.current_value ? Math.round(data.current_value * 100) : undefined,
+    current_value: undefined, // Remove dollar field
+  };
+  const response = await api.post('/api/net-worth/assets', apiData);
   return response.data;
 }
 
 export async function updateAsset(id: number, data: Partial<Asset>): Promise<Asset> {
-  const response = await api.put(`/api/net-worth/assets/${id}`, data);
+  // Convert dollars to cents for API
+  const apiData = {
+    ...data,
+    current_value_cents: data.current_value ? Math.round(data.current_value * 100) : undefined,
+    current_value: undefined, // Remove dollar field
+  };
+  const response = await api.put(`/api/net-worth/assets/${id}`, apiData);
   return response.data;
 }
 
@@ -122,12 +134,28 @@ export async function getLiability(id: number): Promise<Liability> {
 }
 
 export async function createLiability(data: Partial<Liability>): Promise<Liability> {
-  const response = await api.post('/api/net-worth/liabilities', data);
+  // Convert dollars to cents for API
+  const apiData = {
+    ...data,
+    current_balance_cents: data.current_balance ? Math.round(data.current_balance * 100) : undefined,
+    minimum_payment_cents: data.minimum_payment ? Math.round(data.minimum_payment * 100) : undefined,
+    current_balance: undefined, // Remove dollar fields
+    minimum_payment: undefined,
+  };
+  const response = await api.post('/api/net-worth/liabilities', apiData);
   return response.data;
 }
 
 export async function updateLiability(id: number, data: Partial<Liability>): Promise<Liability> {
-  const response = await api.put(`/api/net-worth/liabilities/${id}`, data);
+  // Convert dollars to cents for API
+  const apiData = {
+    ...data,
+    current_balance_cents: data.current_balance ? Math.round(data.current_balance * 100) : undefined,
+    minimum_payment_cents: data.minimum_payment ? Math.round(data.minimum_payment * 100) : undefined,
+    current_balance: undefined, // Remove dollar fields
+    minimum_payment: undefined,
+  };
+  const response = await api.put(`/api/net-worth/liabilities/${id}`, apiData);
   return response.data;
 }
 

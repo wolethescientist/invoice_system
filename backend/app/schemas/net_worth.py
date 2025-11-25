@@ -53,11 +53,37 @@ class AssetUpdate(BaseModel):
     is_active: Optional[bool] = None
 
 
-class Asset(AssetBase):
+class Asset(BaseModel):
     id: int
     user_id: int
+    name: str
+    asset_type: AssetType
+    current_value: float  # Return dollars, not cents
+    institution: Optional[str] = None
+    account_number_last4: Optional[str] = None
+    notes: Optional[str] = None
+    is_liquid: bool = True
+    is_active: bool = True
     created_at: datetime
     updated_at: datetime
+
+    @classmethod
+    def from_orm(cls, obj):
+        """Convert cents to dollars when loading from database"""
+        return cls(
+            id=obj.id,
+            user_id=obj.user_id,
+            name=obj.name,
+            asset_type=obj.asset_type,
+            current_value=obj.current_value_cents / 100.0,
+            institution=obj.institution,
+            account_number_last4=obj.account_number_last4,
+            notes=obj.notes,
+            is_liquid=obj.is_liquid,
+            is_active=obj.is_active,
+            created_at=obj.created_at,
+            updated_at=obj.updated_at
+        )
 
     class Config:
         from_attributes = True
@@ -92,11 +118,39 @@ class LiabilityUpdate(BaseModel):
     is_active: Optional[bool] = None
 
 
-class Liability(LiabilityBase):
+class Liability(BaseModel):
     id: int
     user_id: int
+    name: str
+    liability_type: LiabilityType
+    current_balance: float  # Return dollars, not cents
+    interest_rate: float = 0.0
+    minimum_payment: float  # Return dollars, not cents
+    institution: Optional[str] = None
+    account_number_last4: Optional[str] = None
+    notes: Optional[str] = None
+    is_active: bool = True
     created_at: datetime
     updated_at: datetime
+
+    @classmethod
+    def from_orm(cls, obj):
+        """Convert cents to dollars when loading from database"""
+        return cls(
+            id=obj.id,
+            user_id=obj.user_id,
+            name=obj.name,
+            liability_type=obj.liability_type,
+            current_balance=obj.current_balance_cents / 100.0,
+            interest_rate=obj.interest_rate,
+            minimum_payment=obj.minimum_payment_cents / 100.0,
+            institution=obj.institution,
+            account_number_last4=obj.account_number_last4,
+            notes=obj.notes,
+            is_active=obj.is_active,
+            created_at=obj.created_at,
+            updated_at=obj.updated_at
+        )
 
     class Config:
         from_attributes = True
