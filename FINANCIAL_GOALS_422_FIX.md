@@ -1,30 +1,43 @@
-# Financial Goals 422 Error Fix
+# Financial Goals 422/500 Error Fix
 
 ## Problem
-When creating a financial goal, the API returned a 422 Unprocessable Content error. This was caused by a schema mismatch between the frontend and backend.
+When creating a financial goal, the API returned:
+1. First a 422 Unprocessable Content error (schema mismatch)
+2. Then a 500 Internal Server Error (database constraint violation)
 
-## Root Cause
+## Root Causes
+
+### Issue 1: Schema Mismatch (422 Error)
 - **Frontend** was sending: `target_amount` and `monthly_contribution` (as float/number in dollars)
-- **Backend** was expecting: `target_amount_cents` and `monthly_contribution_cents` (as integers in cents)
-- **Database** stores amounts in cents as integers for precision
+- **Backend model** was expecting: `target_amount_cents` and `monthly_contribution_cents` (as integers)
+- **Actual Database** has: `target_amount` and `monthly_contribution` (as REAL/DECIMAL in dollars)
+
+### Issue 2: Enum Case Mismatch (500 Error)
+- **Backend model** was using uppercase enums: `GoalType.SAVINGS` → `'SAVINGS'`
+- **Database constraint** expects lowercase values: `'savings'`, `'debt_repayment'`, etc.
 
 ## Solution
-Updated the Pydantic schemas to handle the conversion automatically:
+Updated the model and schema to match the actual database structure:
 
 ### Changes Made
 
-1. **Schema Layer** (`backend/app/schemas/financial_goal.py`):
-   - Changed `FinancialGoalBase` to accept dollar amounts (`target_amount`, `monthly_contribution`)
-   - Added conversion logic in `FinancialGoalCreate` to convert to cents
-   - Added `from_orm()` method in `FinancialGoal` to convert cents back to dollars when reading
-   - Updated `FinancialGoalUpdate` with `to_cents_dict()` method for updates
+1. **Model Layer** (`backend/app/models/financial_goal.py`):
+   - Changed from `target_amount_cents` (Integer) to `target_amount` (Float)
+   - Changed from `current_amount_cents` (Integer) to `current_amount` (Float)
+   - Changed from `monthly_contribution_cents` (Integer) to `monthly_contribution` (Float)
+   - Changed from `SQLEnum(GoalType)` to `String` (to allow lowercase values)
+   - Changed from `SQLEnum(GoalStatus)` to `String` (to allow lowercase values)
+   - Removed `is_active` column (not in database schema)
 
-2. **API Layer** (`backend/app/api/financial_goals.py`):
-   - Updated `create_goal()` to convert dollar amounts to cents before saving
-   - Updated `get_goal()`, `get_goals()` to use `from_orm()` for proper conversion
-   - Updated `update_goal()` to use `to_cents_dict()` for proper conversion
-   - Updated `calculate_projection()` to work with cents internally
-   - Updated `get_goals_summary()` to convert cents to dollars for calculations
+2. **Schema Layer** (`backend/app/schemas/financial_goal.py`):
+   - Simplified to work directly with dollar amounts (no conversion needed)
+   - Removed complex `from_orm()` and `to_cents_dict()` methods
+   - Schema now matches database structure exactly
+
+3. **API Layer** (`backend/app/api/financial_goals.py`):
+   - Removed all cents conversion logic
+   - Updated status comparisons to use lowercase strings (`'active'`, `'completed'`)
+   - Simplified all endpoints to work directly with Float amounts
 
 ## How It Works Now
 
@@ -32,35 +45,26 @@ Updated the Pydantic schemas to handle the conversion automatically:
 ```
 Frontend sends:
 {
+  "goal_type": "savings",
   "target_amount": 10000.00,
   "monthly_contribution": 500.00
 }
 
-↓ Schema converts to cents
+↓ No conversion needed
 
 Database stores:
 {
-  "target_amount_cents": 1000000,
-  "monthly_contribution_cents": 50000
-}
-```
-
-### Reading a Goal (Database → Backend → Frontend)
-```
-Database has:
-{
-  "target_amount_cents": 1000000,
-  "monthly_contribution_cents": 50000
-}
-
-↓ from_orm() converts to dollars
-
-Frontend receives:
-{
+  "goal_type": "savings",
   "target_amount": 10000.00,
   "monthly_contribution": 500.00
 }
 ```
+
+### Database Schema
+The actual database uses:
+- `target_amount REAL` (SQLite) or `DECIMAL(12,2)` (PostgreSQL) - stores dollars
+- `goal_type VARCHAR` with CHECK constraint for lowercase values
+- `status VARCHAR` with CHECK constraint for lowercase values
 
 ## Testing
 Run the test script to verify the fix:
@@ -70,4 +74,4 @@ python test_financial_goals_fix.py
 ```
 
 ## No Frontend Changes Required
-The frontend API calls remain unchanged - they continue to send and receive dollar amounts as expected.
+The frontend API calls remain unchanged - they send and receive dollar amounts with lowercase enum values as expected.

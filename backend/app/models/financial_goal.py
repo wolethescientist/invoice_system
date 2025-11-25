@@ -32,14 +32,13 @@ class FinancialGoal(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     name = Column(String, nullable=False)
     description = Column(String)
-    goal_type = Column(SQLEnum(GoalType), nullable=False)
-    target_amount_cents = Column(Integer, nullable=False)  # Target amount in cents
-    current_amount_cents = Column(Integer, default=0)  # Current amount in cents
-    monthly_contribution_cents = Column(Integer, default=0)  # Monthly contribution in cents
+    goal_type = Column(String, nullable=False)  # Using String instead of Enum for lowercase values
+    target_amount = Column(Float, nullable=False)  # Target amount in dollars
+    current_amount = Column(Float, default=0.0)  # Current amount in dollars
+    monthly_contribution = Column(Float, default=0.0)  # Monthly contribution in dollars
     target_date = Column(Date, nullable=False)
     start_date = Column(Date, nullable=False)
-    status = Column(SQLEnum(GoalStatus), default=GoalStatus.ACTIVE)
-    is_active = Column(Boolean, default=True)
+    status = Column(String, default='active')  # Using String instead of Enum for lowercase values
     priority = Column(Integer, default=1)  # 1-5, 1 being highest
     notes = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)

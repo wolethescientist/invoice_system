@@ -84,13 +84,7 @@ class FinancialGoalBase(BaseModel):
 
 
 class FinancialGoalCreate(FinancialGoalBase):
-    @property
-    def target_amount_cents(self) -> int:
-        return int(self.target_amount * 100)
-    
-    @property
-    def monthly_contribution_cents(self) -> int:
-        return int(self.monthly_contribution * 100)
+    pass
 
 
 class FinancialGoalUpdate(BaseModel):
@@ -104,18 +98,6 @@ class FinancialGoalUpdate(BaseModel):
     status: Optional[GoalStatus] = None
     priority: Optional[int] = Field(None, ge=1, le=5)
     notes: Optional[str] = None
-    is_active: Optional[bool] = None
-    
-    def to_cents_dict(self):
-        """Convert dollar amounts to cents for database storage"""
-        data = self.model_dump(exclude_unset=True)
-        if 'target_amount' in data:
-            data['target_amount_cents'] = int(data.pop('target_amount') * 100)
-        if 'current_amount' in data:
-            data['current_amount_cents'] = int(data.pop('current_amount') * 100)
-        if 'monthly_contribution' in data:
-            data['monthly_contribution_cents'] = int(data.pop('monthly_contribution') * 100)
-        return data
 
 
 class FinancialGoal(FinancialGoalBase):
@@ -123,7 +105,6 @@ class FinancialGoal(FinancialGoalBase):
     user_id: int
     current_amount: float
     status: GoalStatus
-    is_active: bool
     created_at: datetime
     updated_at: datetime
     contributions: List[GoalContribution] = []
@@ -131,31 +112,6 @@ class FinancialGoal(FinancialGoalBase):
 
     class Config:
         from_attributes = True
-    
-    @classmethod
-    def from_orm(cls, obj):
-        """Convert cents to dollars when reading from database"""
-        data = {
-            'id': obj.id,
-            'user_id': obj.user_id,
-            'name': obj.name,
-            'description': obj.description,
-            'goal_type': obj.goal_type,
-            'target_amount': obj.target_amount_cents / 100,
-            'current_amount': obj.current_amount_cents / 100,
-            'monthly_contribution': obj.monthly_contribution_cents / 100,
-            'target_date': obj.target_date,
-            'start_date': obj.start_date,
-            'status': obj.status,
-            'is_active': obj.is_active,
-            'priority': obj.priority,
-            'notes': obj.notes,
-            'created_at': obj.created_at,
-            'updated_at': obj.updated_at,
-            'contributions': obj.contributions,
-            'milestones': obj.milestones
-        }
-        return cls(**data)
 
 
 class GoalProjection(BaseModel):
