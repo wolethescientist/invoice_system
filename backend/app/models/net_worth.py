@@ -118,10 +118,10 @@ class NetWorthSnapshot(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     snapshot_date = Column(Date, nullable=False)
-    total_assets = Column(Float, nullable=False)
-    total_liabilities = Column(Float, nullable=False)
-    net_worth = Column(Float, nullable=False)
-    liquid_assets = Column(Float, default=0.0)
+    total_assets_cents = Column(Integer, nullable=False)  # Value in cents
+    total_liabilities_cents = Column(Integer, nullable=False)  # Value in cents
+    net_worth_cents = Column(Integer, nullable=False)  # Value in cents
+    liquid_assets_cents = Column(Integer, default=0)  # Value in cents
     notes = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
 

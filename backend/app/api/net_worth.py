@@ -65,8 +65,12 @@ def generate_alerts(user_id: int, db: Session) -> List[NetWorthAlert]:
     current = snapshots[0]
     previous = snapshots[1]
     
-    change = current.net_worth - previous.net_worth
-    change_pct = (change / previous.net_worth * 100) if previous.net_worth != 0 else 0
+    # Convert cents to dollars for calculations
+    current_nw = current.net_worth_cents / 100.0
+    previous_nw = previous.net_worth_cents / 100.0
+    
+    change = current_nw - previous_nw
+    change_pct = (change / previous_nw * 100) if previous_nw != 0 else 0
     
     # Alert for significant increase (>10%)
     if change_pct > 10:
@@ -89,22 +93,24 @@ def generate_alerts(user_id: int, db: Session) -> List[NetWorthAlert]:
         ))
     
     # Alert for negative net worth
-    if current.net_worth < 0:
+    if current_nw < 0:
         alerts.append(NetWorthAlert(
             alert_type="negative_net_worth",
             severity="critical",
             message="Your net worth is currently negative",
-            change_amount=current.net_worth,
+            change_amount=current_nw,
             change_percentage=None
         ))
     
     # Alert for low liquid assets
-    if current.liquid_assets < current.total_liabilities * 0.1:
+    current_liquid = (current.liquid_assets_cents or 0) / 100.0
+    current_liabilities = current.total_liabilities_cents / 100.0
+    if current_liquid < current_liabilities * 0.1:
         alerts.append(NetWorthAlert(
             alert_type="low_liquidity",
             severity="warning",
             message="Your liquid assets are less than 10% of your total liabilities",
-            change_amount=current.liquid_assets,
+            change_amount=current_liquid,
             change_percentage=None
         ))
     
@@ -365,22 +371,22 @@ def create_snapshot(
     ).first()
     
     if existing:
-        # Update existing snapshot
-        existing.total_assets = nw_data["total_assets"]
-        existing.total_liabilities = nw_data["total_liabilities"]
-        existing.net_worth = nw_data["net_worth"]
-        existing.liquid_assets = nw_data["liquid_assets"]
+        # Update existing snapshot (convert dollars to cents)
+        existing.total_assets_cents = int(nw_data["total_assets"] * 100)
+        existing.total_liabilities_cents = int(nw_data["total_liabilities"] * 100)
+        existing.net_worth_cents = int(nw_data["net_worth"] * 100)
+        existing.liquid_assets_cents = int(nw_data["liquid_assets"] * 100)
         db.commit()
         return {"message": "Snapshot updated successfully"}
     
-    # Create new snapshot
+    # Create new snapshot (convert dollars to cents)
     snapshot = NetWorthSnapshot(
         user_id=current_user.id,
         snapshot_date=date.today(),
-        total_assets=nw_data["total_assets"],
-        total_liabilities=nw_data["total_liabilities"],
-        net_worth=nw_data["net_worth"],
-        liquid_assets=nw_data["liquid_assets"]
+        total_assets_cents=int(nw_data["total_assets"] * 100),
+        total_liabilities_cents=int(nw_data["total_liabilities"] * 100),
+        net_worth_cents=int(nw_data["net_worth"] * 100),
+        liquid_assets_cents=int(nw_data["liquid_assets"] * 100)
     )
     db.add(snapshot)
     db.commit()
@@ -444,16 +450,19 @@ def get_summary(
     )
     
     if snapshot_30:
-        summary.change_30_days = current["net_worth"] - snapshot_30.net_worth
-        summary.change_30_days_pct = (summary.change_30_days / snapshot_30.net_worth * 100) if snapshot_30.net_worth != 0 else 0
+        snapshot_30_nw = snapshot_30.net_worth_cents / 100.0
+        summary.change_30_days = current["net_worth"] - snapshot_30_nw
+        summary.change_30_days_pct = (summary.change_30_days / snapshot_30_nw * 100) if snapshot_30_nw != 0 else 0
     
     if snapshot_90:
-        summary.change_90_days = current["net_worth"] - snapshot_90.net_worth
-        summary.change_90_days_pct = (summary.change_90_days / snapshot_90.net_worth * 100) if snapshot_90.net_worth != 0 else 0
+        snapshot_90_nw = snapshot_90.net_worth_cents / 100.0
+        summary.change_90_days = current["net_worth"] - snapshot_90_nw
+        summary.change_90_days_pct = (summary.change_90_days / snapshot_90_nw * 100) if snapshot_90_nw != 0 else 0
     
     if snapshot_1y:
-        summary.change_1_year = current["net_worth"] - snapshot_1y.net_worth
-        summary.change_1_year_pct = (summary.change_1_year / snapshot_1y.net_worth * 100) if snapshot_1y.net_worth != 0 else 0
+        snapshot_1y_nw = snapshot_1y.net_worth_cents / 100.0
+        summary.change_1_year = current["net_worth"] - snapshot_1y_nw
+        summary.change_1_year_pct = (summary.change_1_year / snapshot_1y_nw * 100) if snapshot_1y_nw != 0 else 0
     
     return summary
 
@@ -475,9 +484,9 @@ def get_trends(
     return [
         NetWorthTrend(
             date=s.snapshot_date,
-            net_worth=s.net_worth,
-            assets=s.total_assets,
-            liabilities=s.total_liabilities
+            net_worth=s.net_worth_cents / 100.0,
+            assets=s.total_assets_cents / 100.0,
+            liabilities=s.total_liabilities_cents / 100.0
         )
         for s in snapshots
     ]

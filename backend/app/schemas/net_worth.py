@@ -152,6 +152,21 @@ class NetWorthSnapshot(BaseModel):
     notes: Optional[str]
     created_at: datetime
 
+    @classmethod
+    def from_orm(cls, obj):
+        """Convert cents to dollars when loading from database"""
+        return cls(
+            id=obj.id,
+            user_id=obj.user_id,
+            snapshot_date=obj.snapshot_date,
+            total_assets=obj.total_assets_cents / 100.0,
+            total_liabilities=obj.total_liabilities_cents / 100.0,
+            net_worth=obj.net_worth_cents / 100.0,
+            liquid_assets=(obj.liquid_assets_cents or 0) / 100.0,
+            notes=obj.notes,
+            created_at=obj.created_at
+        )
+
     class Config:
         from_attributes = True
 
