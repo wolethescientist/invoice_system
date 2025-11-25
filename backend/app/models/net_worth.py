@@ -46,6 +46,12 @@ class Asset(Base):
     # Relationships
     snapshots = relationship("AssetSnapshot", back_populates="asset", cascade="all, delete-orphan")
 
+    # Helper properties for dollar values
+    @property
+    def current_value(self):
+        """Get value in dollars"""
+        return self.current_value_cents / 100.0
+
     __table_args__ = (
         Index('idx_asset_user_active', 'user_id', 'is_active'),
     )
@@ -71,6 +77,17 @@ class Liability(Base):
     # Relationships
     snapshots = relationship("LiabilitySnapshot", back_populates="liability", cascade="all, delete-orphan")
 
+    # Helper properties for dollar values
+    @property
+    def current_balance(self):
+        """Get balance in dollars"""
+        return self.current_balance_cents / 100.0
+    
+    @property
+    def minimum_payment(self):
+        """Get minimum payment in dollars"""
+        return self.minimum_payment_cents / 100.0
+
     __table_args__ = (
         Index('idx_liability_user_active', 'user_id', 'is_active'),
     )
@@ -81,13 +98,19 @@ class AssetSnapshot(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     asset_id = Column(Integer, ForeignKey("assets.id"), nullable=False)
-    value = Column(Float, nullable=False)
+    value_cents = Column(Integer, nullable=False)  # Value in cents
     snapshot_date = Column(Date, nullable=False)
     notes = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
     asset = relationship("Asset", back_populates="snapshots")
+
+    # Helper property for dollar values
+    @property
+    def value(self):
+        """Get value in dollars"""
+        return self.value_cents / 100.0
 
     __table_args__ = (
         Index('idx_asset_snapshot_date', 'asset_id', 'snapshot_date'),
@@ -99,13 +122,19 @@ class LiabilitySnapshot(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     liability_id = Column(Integer, ForeignKey("liabilities.id"), nullable=False)
-    balance = Column(Float, nullable=False)
+    balance_cents = Column(Integer, nullable=False)  # Balance in cents
     snapshot_date = Column(Date, nullable=False)
     notes = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
     liability = relationship("Liability", back_populates="snapshots")
+
+    # Helper property for dollar values
+    @property
+    def balance(self):
+        """Get balance in dollars"""
+        return self.balance_cents / 100.0
 
     __table_args__ = (
         Index('idx_liability_snapshot_date', 'liability_id', 'snapshot_date'),

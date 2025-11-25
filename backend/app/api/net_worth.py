@@ -136,7 +136,7 @@ def create_asset(
     # Create initial snapshot
     snapshot = AssetSnapshot(
         asset_id=db_asset.id,
-        value=db_asset.current_value,
+        value_cents=db_asset.current_value_cents,
         snapshot_date=date.today()
     )
     db.add(snapshot)
@@ -206,7 +206,7 @@ def update_asset(
     if "current_value" in update_data and update_data["current_value"] != old_value:
         snapshot = AssetSnapshot(
             asset_id=asset.id,
-            value=asset.current_value,
+            value_cents=asset.current_value_cents,
             snapshot_date=date.today()
         )
         db.add(snapshot)
@@ -255,7 +255,7 @@ def create_liability(
     # Create initial snapshot
     snapshot = LiabilitySnapshot(
         liability_id=db_liability.id,
-        balance=db_liability.current_balance,
+        balance_cents=db_liability.current_balance_cents,
         snapshot_date=date.today()
     )
     db.add(snapshot)
@@ -325,7 +325,7 @@ def update_liability(
     if "current_balance" in update_data and update_data["current_balance"] != old_balance:
         snapshot = LiabilitySnapshot(
             liability_id=liability.id,
-            balance=liability.current_balance,
+            balance_cents=liability.current_balance_cents,
             snapshot_date=date.today()
         )
         db.add(snapshot)

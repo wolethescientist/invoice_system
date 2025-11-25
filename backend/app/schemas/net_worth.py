@@ -118,6 +118,18 @@ class AssetSnapshot(BaseModel):
     notes: Optional[str]
     created_at: datetime
 
+    @classmethod
+    def from_orm(cls, obj):
+        """Convert cents to dollars when loading from database"""
+        return cls(
+            id=obj.id,
+            asset_id=obj.asset_id,
+            value=obj.value_cents / 100.0,
+            snapshot_date=obj.snapshot_date,
+            notes=obj.notes,
+            created_at=obj.created_at
+        )
+
     class Config:
         from_attributes = True
 
@@ -136,6 +148,18 @@ class LiabilitySnapshot(BaseModel):
     snapshot_date: date
     notes: Optional[str]
     created_at: datetime
+
+    @classmethod
+    def from_orm(cls, obj):
+        """Convert cents to dollars when loading from database"""
+        return cls(
+            id=obj.id,
+            liability_id=obj.liability_id,
+            balance=obj.balance_cents / 100.0,
+            snapshot_date=obj.snapshot_date,
+            notes=obj.notes,
+            created_at=obj.created_at
+        )
 
     class Config:
         from_attributes = True
